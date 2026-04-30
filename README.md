@@ -52,6 +52,23 @@ dotnet build .\NitKotin\NitKotin.csproj
 dotnet run --project .\NitKotin\NitKotin.csproj
 ```
 
+## GitHub і релізи
+
+Для цього репозиторію додані локальні GitHub/Copilot інструкції:
+
+- `.github/copilot-instructions.md` містить короткі правила для структури репозиторію, версій, релізного циклу і публікації MSI;
+- `.github/skills/create-installer/SKILL.md` містить покроковий runbook для створення нового інсталятора.
+
+Рекомендований GitHub release flow:
+
+1. інкрементувати `Version` у `Directory.Build.props`;
+2. оновити `README.md`, якщо змінилась версія або release notes-інформація для користувача;
+3. виконати `clean` для solution і installer-проєкту, щоб не лишилось старих артефактів;
+4. зібрати `NitKotin` у `Release`;
+5. зібрати `NitKotin.Installer` у `Release`;
+6. створити Git tag і GitHub Release з таким самим номером версії;
+7. прикріпити MSI `NitKotin-<версія>-x64.msi` до релізу.
+
 ## Збірка MSI
 
 ```powershell
