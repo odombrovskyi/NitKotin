@@ -36,7 +36,6 @@ partial class MainForm
         motivationMarqueeLabel = new MarqueeLabel();
         configPanel = new Panel();
         autosaveLabel = new Label();
-        saveButton = new Button();
         packPriceNumericUpDown = new NumericUpDown();
         packPriceLabel = new Label();
         packsPerDayNumericUpDown = new NumericUpDown();
@@ -168,7 +167,6 @@ partial class MainForm
         // 
         configPanel.BackColor = Color.White;
         configPanel.Controls.Add(autosaveLabel);
-        configPanel.Controls.Add(saveButton);
         configPanel.Controls.Add(packPriceNumericUpDown);
         configPanel.Controls.Add(packPriceLabel);
         configPanel.Controls.Add(packsPerDayNumericUpDown);
@@ -186,28 +184,13 @@ partial class MainForm
         // 
         autosaveLabel.AutoSize = true;
         autosaveLabel.ForeColor = Color.FromArgb(71, 85, 105);
-        autosaveLabel.Location = new Point(25, 411);
+        autosaveLabel.Location = new Point(25, 258);
         autosaveLabel.MaximumSize = new Size(263, 0);
         autosaveLabel.Name = "autosaveLabel";
         autosaveLabel.Size = new Size(245, 40);
-        autosaveLabel.TabIndex = 9;
+        autosaveLabel.TabIndex = 8;
         autosaveLabel.Text = "Зміни зберігаються автоматично після короткої затримки.";
-        autosaveLabel.Visible = false;
-        // 
-        // saveButton
-        // 
-        saveButton.BackColor = Color.FromArgb(37, 99, 235);
-        saveButton.FlatStyle = FlatStyle.Flat;
-        saveButton.Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold);
-        saveButton.ForeColor = Color.White;
-        saveButton.Location = new Point(23, 259);
-        saveButton.Margin = new Padding(3, 4, 3, 4);
-        saveButton.Name = "saveButton";
-        saveButton.Size = new Size(245, 37);
-        saveButton.TabIndex = 8;
-        saveButton.Text = "Зберегти зараз";
-        saveButton.UseVisualStyleBackColor = false;
-        saveButton.Click += saveButton_Click;
+        autosaveLabel.Visible = true;
         // 
         // packPriceNumericUpDown
         // 
@@ -536,6 +519,7 @@ partial class MainForm
         refreshProductsButton.Size = new Size(137, 40);
         refreshProductsButton.TabIndex = 1;
         refreshProductsButton.Text = "Оновити добірку";
+        refreshProductsButton.TextAlign = ContentAlignment.MiddleCenter;
         refreshProductsButton.UseVisualStyleBackColor = false;
         refreshProductsButton.Click += refreshProductsButton_Click;
         // 
@@ -984,7 +968,6 @@ partial class MainForm
     private NumericUpDown packsPerDayNumericUpDown;
     private Label packPriceLabel;
     private NumericUpDown packPriceNumericUpDown;
-    private Button saveButton;
     private Label autosaveLabel;
     private Panel savingsPanel;
     private Label savedCaptionLabel;

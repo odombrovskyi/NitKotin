@@ -121,14 +121,6 @@ public partial class MainForm : Form
 
     private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
     {
-        if (e.CloseReason == CloseReason.UserClosing && !_isExiting)
-        {
-            e.Cancel = true;
-            Hide();
-            UpdateTrayMenuLabels();
-            return;
-        }
-
         PersistOverlayPosition();
         _trayIcon.Visible = false;
 
@@ -155,11 +147,6 @@ public partial class MainForm : Form
         return File.Exists(iconPath)
             ? new Icon(iconPath)
             : SystemIcons.Application;
-    }
-
-    private void saveButton_Click(object? sender, EventArgs e)
-    {
-        SaveCurrentConfig("Збережено вручну");
     }
 
     private void quitSmokingNowButton_Click(object? sender, EventArgs e)
@@ -554,6 +541,13 @@ public partial class MainForm : Form
 
     private void MainForm_Resize(object? sender, EventArgs e)
     {
+        if (WindowState == FormWindowState.Minimized && !_isExiting)
+        {
+            Hide();
+            UpdateTrayMenuLabels();
+            return;
+        }
+
         UpdateTrayMenuLabels();
     }
 
