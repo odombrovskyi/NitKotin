@@ -41,6 +41,7 @@ partial class MainForm
         packPriceLabel = new Label();
         packsPerDayNumericUpDown = new NumericUpDown();
         packsPerDayLabel = new Label();
+        quitSmokingNowButton = new Button();
         quitDateTimePicker = new DateTimePicker();
         quitDateLabel = new Label();
         savingsPanel = new Panel();
@@ -172,6 +173,7 @@ partial class MainForm
         configPanel.Controls.Add(packPriceLabel);
         configPanel.Controls.Add(packsPerDayNumericUpDown);
         configPanel.Controls.Add(packsPerDayLabel);
+        configPanel.Controls.Add(quitSmokingNowButton);
         configPanel.Controls.Add(quitDateTimePicker);
         configPanel.Controls.Add(quitDateLabel);
         configPanel.Location = new Point(32, 149);
@@ -252,6 +254,22 @@ partial class MainForm
         packsPerDayLabel.Size = new Size(128, 23);
         packsPerDayLabel.TabIndex = 4;
         packsPerDayLabel.Text = "Пачок на день";
+        // 
+        // quitSmokingNowButton
+        // 
+        quitSmokingNowButton.BackColor = Color.FromArgb(22, 163, 74);
+        quitSmokingNowButton.FlatStyle = FlatStyle.Flat;
+        quitSmokingNowButton.Font = new Font("Segoe UI Semibold", 12F, FontStyle.Bold);
+        quitSmokingNowButton.ForeColor = Color.White;
+        quitSmokingNowButton.Location = new Point(25, 27);
+        quitSmokingNowButton.Margin = new Padding(3, 4, 3, 4);
+        quitSmokingNowButton.Name = "quitSmokingNowButton";
+        quitSmokingNowButton.Size = new Size(244, 54);
+        quitSmokingNowButton.TabIndex = 3;
+        quitSmokingNowButton.Text = "Я кинув палити!";
+        quitSmokingNowButton.UseVisualStyleBackColor = false;
+        quitSmokingNowButton.Visible = false;
+        quitSmokingNowButton.Click += quitSmokingNowButton_Click;
         // 
         // quitDateTimePicker
         // 
@@ -960,6 +978,7 @@ partial class MainForm
     private MarqueeLabel motivationMarqueeLabel;
     private Panel configPanel;
     private Label quitDateLabel;
+    private Button quitSmokingNowButton;
     private DateTimePicker quitDateTimePicker;
     private Label packsPerDayLabel;
     private NumericUpDown packsPerDayNumericUpDown;

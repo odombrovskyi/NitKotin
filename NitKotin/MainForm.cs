@@ -22,6 +22,7 @@ public partial class MainForm : Form
     private decimal _animatedSavedAmount;
     private bool _isInitializing;
     private bool _isExiting;
+    private bool _isAwaitingFirstQuitConfirmation;
     private DateTime _lastProductsRefreshLocal;
     private DateTime _lastProductsRefreshRequestUtc = DateTime.MinValue;
     private SmokingConfig _config;
@@ -30,6 +31,7 @@ public partial class MainForm : Form
     public MainForm()
     {
         _configService = new ConfigService();
+        _isAwaitingFirstQuitConfirmation = !File.Exists(_configService.ConfigPath);
         var catalogService = new ProductCatalogService();
         _motivationalPhraseService = new MotivationalPhraseService();
         _recoveryTimelineService = new RecoveryTimelineService();
@@ -41,8 +43,9 @@ public partial class MainForm : Form
         _refreshTimer = new System.Windows.Forms.Timer();
 
         InitializeComponent();
-    _appIcon = LoadAppIcon();
-    Icon = _appIcon;
+        UpdateQuitDateInputMode();
+        _appIcon = LoadAppIcon();
+        Icon = _appIcon;
         _overlayForm = new OverlayForm(_config);
         _overlayForm.PositionCommitted += OverlayForm_PositionCommitted;
         _overlayForm.VisibleChanged += OverlayForm_VisibleChanged;
@@ -95,10 +98,13 @@ public partial class MainForm : Form
         packsPerDayNumericUpDown.Value = ClampDecimal(_config.PacksPerDay, packsPerDayNumericUpDown.Minimum, packsPerDayNumericUpDown.Maximum);
         packPriceNumericUpDown.Value = ClampDecimal(_config.PackPriceUah, packPriceNumericUpDown.Minimum, packPriceNumericUpDown.Maximum);
         _isInitializing = false;
+        UpdateQuitDateInputMode();
 
-        statusLabel.Text = File.Exists(_configService.ConfigPath)
-            ? $"Конфіг завантажено: {_configService.ConfigPath}"
-            : $"Конфіг буде збережено в: {_configService.ConfigPath}";
+        statusLabel.Text = _isAwaitingFirstQuitConfirmation
+            ? $"Натисни \"Я кинув палити!\", щоб почати відлік. Конфіг буде збережено в: {_configService.ConfigPath}"
+            : File.Exists(_configService.ConfigPath)
+                ? $"Конфіг завантажено: {_configService.ConfigPath}"
+                : $"Конфіг буде збережено в: {_configService.ConfigPath}";
 
         ConfigureMotivationMarquee();
         UpdateSavingsDisplay();
@@ -155,10 +161,29 @@ public partial class MainForm : Form
         SaveCurrentConfig("Збережено вручну");
     }
 
+    private void quitSmokingNowButton_Click(object? sender, EventArgs e)
+    {
+        _autoSaveTimer.Stop();
+        _isInitializing = true;
+        quitDateTimePicker.Value = NormalizeDateTime(DateTime.Now);
+        _isInitializing = false;
+        _isAwaitingFirstQuitConfirmation = false;
+        UpdateQuitDateInputMode();
+        SaveCurrentConfig("Початок відліку збережено");
+        UpdateOverlayDisplay();
+    }
+
     private void Input_ValueChanged(object? sender, EventArgs e)
     {
         if (_isInitializing)
         {
+            return;
+        }
+
+        if (_isAwaitingFirstQuitConfirmation)
+        {
+            statusLabel.Text = "Налаштування підготовлено. Натисни \"Я кинув палити!\", щоб почати відлік і зберегти конфіг.";
+            UpdateSavingsDisplay();
             return;
         }
 
@@ -176,6 +201,13 @@ public partial class MainForm : Form
 
     private void SaveCurrentConfig(string statusPrefix)
     {
+        if (_isAwaitingFirstQuitConfirmation)
+        {
+            statusLabel.Text = "Спочатку натисни \"Я кинув палити!\", щоб зафіксувати час відмови.";
+            UpdateSavingsDisplay();
+            return;
+        }
+
         _config = BuildCurrentConfig();
 
         try
@@ -225,6 +257,19 @@ public partial class MainForm : Form
 
     private void UpdateSavingsDisplay()
     {
+        if (_isAwaitingFirstQuitConfirmation)
+        {
+            _targetSavedAmount = 0m;
+            _animatedSavedAmount = 0m;
+            savedAmountLabel.Text = SavingsCalculator.FormatCurrency(0m);
+            elapsedValueLabel.Text = "Відлік ще не почався";
+            hintLabel.Text = "Натисни \"Я кинув палити!\", щоб зафіксувати поточний час і почати відлік.";
+            recoveryTimelineLegendLabel.Text = "Етапи відновлення з'являться після натискання кнопки старту.";
+            HideRecoveryTimelineCards();
+            RefreshProductSuggestions(forceRefresh: false, reason: null);
+            return;
+        }
+
         var liveConfig = new SmokingConfig
         {
             QuitDateTime = quitDateTimePicker.Value,
@@ -283,9 +328,23 @@ public partial class MainForm : Form
             return;
         }
 
+        if (_isAwaitingFirstQuitConfirmation)
+        {
+            _overlayForm.UpdateValues(FormatOverlaySavings(0m), FormatOverlayHours(0));
+            UpdateTrayMenuLabels();
+            return;
+        }
+
         var smokeFreeHours = GetSmokeFreeHours(quitDateTimePicker.Value, DateTime.Now);
         _overlayForm.UpdateValues(FormatOverlaySavings(_animatedSavedAmount), FormatOverlayHours(smokeFreeHours));
         UpdateTrayMenuLabels();
+    }
+
+    private void UpdateQuitDateInputMode()
+    {
+        quitSmokingNowButton.Visible = _isAwaitingFirstQuitConfirmation;
+        quitDateLabel.Visible = !_isAwaitingFirstQuitConfirmation;
+        quitDateTimePicker.Visible = !_isAwaitingFirstQuitConfirmation;
     }
 
     private void RefreshProductSuggestions(bool forceRefresh, string? reason)
@@ -432,6 +491,11 @@ public partial class MainForm : Form
 
     private void PersistOverlayPosition()
     {
+        if (_isAwaitingFirstQuitConfirmation)
+        {
+            return;
+        }
+
         _config = BuildCurrentConfig();
 
         try
@@ -549,6 +613,7 @@ public partial class MainForm : Form
 
     private void UpdateRecoveryTimeline(DateTime quitDateTime, DateTime now)
     {
+        recoveryTimelineLegendLabel.Text = "Зелене — уже позаду, помаранчеве — твій поточний етап, нейтральне — наступні зміни.";
         var snapshots = _recoveryTimelineService.GetVisibleMilestones(now - quitDateTime, 5);
         var cards = new[]
         {
@@ -575,6 +640,15 @@ public partial class MainForm : Form
 
             cards[index].Item1.Visible = false;
         }
+    }
+
+    private void HideRecoveryTimelineCards()
+    {
+        recoveryCardPanel1.Visible = false;
+        recoveryCardPanel2.Visible = false;
+        recoveryCardPanel3.Visible = false;
+        recoveryCardPanel4.Visible = false;
+        recoveryCardPanel5.Visible = false;
     }
 
     private static void ApplyRecoveryCard(
