@@ -171,12 +171,16 @@ public partial class MainForm : Form
         if (_isAwaitingFirstQuitConfirmation)
         {
             statusLabel.Text = "Налаштування підготовлено. Натисни \"Я кинув палити!\", щоб почати відлік і зберегти конфіг.";
-            UpdateSavingsDisplay();
+            UpdateSavingsDisplay(forceRefreshDependentViews: true);
+            UpdateAnimatedAmountDisplay();
+            UpdateOverlayDisplay();
             return;
         }
 
         statusLabel.Text = "Виявлено зміни. Автозбереження...";
-        UpdateSavingsDisplay();
+        UpdateSavingsDisplay(forceRefreshDependentViews: true);
+        UpdateAnimatedAmountDisplay();
+        UpdateOverlayDisplay();
         _autoSaveTimer.Stop();
         _autoSaveTimer.Start();
     }
@@ -243,7 +247,7 @@ public partial class MainForm : Form
         RefreshProductSuggestions(forceRefresh: true, reason: "Добірку товарів оновлено вручну.");
     }
 
-    private void UpdateSavingsDisplay()
+    private void UpdateSavingsDisplay(bool forceRefreshDependentViews = false)
     {
         if (_isAwaitingFirstQuitConfirmation)
         {
@@ -254,7 +258,7 @@ public partial class MainForm : Form
             hintLabel.Text = "Натисни \"Я кинув палити!\", щоб зафіксувати поточний час і почати відлік.";
             recoveryTimelineLegendLabel.Text = "Етапи відновлення з'являться після натискання кнопки старту.";
             HideRecoveryTimelineCards();
-            RefreshProductSuggestions(forceRefresh: false, reason: null);
+            RefreshProductSuggestions(forceRefresh: forceRefreshDependentViews, reason: null);
             return;
         }
 
@@ -283,7 +287,7 @@ public partial class MainForm : Form
             hintLabel.Text = "Сума оновлюється автоматично в реальному часі.";
         }
 
-        RefreshProductSuggestions(forceRefresh: false, reason: null);
+        RefreshProductSuggestions(forceRefresh: forceRefreshDependentViews, reason: null);
     }
 
     private void UpdateAnimatedAmountDisplay()
