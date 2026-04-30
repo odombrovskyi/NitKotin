@@ -1,0 +1,23 @@
+<Project Sdk="WixToolset.Sdk/4.0.5" InitialTargets="PublishAppForInstaller">
+
+  <PropertyGroup>
+    <OutputType>Package</OutputType>
+    <Platform>x64</Platform>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <OutputName>NitKotin-$(Version)-x64</OutputName>
+    <PublishDir>$(MSBuildThisFileDirectory)artifacts\publish\</PublishDir>
+    <DefineConstants>$(DefineConstants);PublishDir=$(PublishDir);NitKotinVersion=$(Version);NitKotinManufacturer=$(Company);NitKotinProductName=$(Product);NitKotinDescription=$(Description)</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="4.0.5" />
+  </ItemGroup>
+
+  <Target Name="PublishAppForInstaller">
+    <RemoveDir Directories="$(PublishDir)" />
+    <Exec
+      WorkingDirectory="$(MSBuildProjectDirectory)"
+      Command="dotnet publish &quot;..\NitKotin\NitKotin.csproj&quot; -c $(Configuration) -r win-x64 --self-contained false -o &quot;$(PublishDir)&quot;" />
+  </Target>
+
+</Project>

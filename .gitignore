@@ -1,5 +1,8 @@
 /NitKotin/obj
 /NitKotin/bin
+/NitKotin.Installer/obj
+/NitKotin.Installer/bin
+/NitKotin.Installer/artifacts
 .vscode
 .vs
 /NitKotin/*.user

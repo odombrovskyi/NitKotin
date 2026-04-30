@@ -5,6 +5,9 @@ namespace NitKotin.Services;
 
 public sealed class ConfigService
 {
+    private const string AppFolderName = "NitKotin";
+    private const string ConfigFileName = "nitkotin.config.json";
+
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
         WriteIndented = true
@@ -14,7 +17,7 @@ public sealed class ConfigService
 
     public ConfigService(string? configPath = null)
     {
-        _configPath = configPath ?? Path.Combine(AppContext.BaseDirectory, "nitkotin.config.json");
+        _configPath = configPath ?? GetDefaultConfigPath();
     }
 
     public string ConfigPath => _configPath;
@@ -51,5 +54,11 @@ public sealed class ConfigService
 
         var json = JsonSerializer.Serialize(config, SerializerOptions);
         File.WriteAllText(_configPath, json);
+    }
+
+    private static string GetDefaultConfigPath()
+    {
+        var baseDirectory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        return Path.Combine(baseDirectory, AppFolderName, ConfigFileName);
     }
 }

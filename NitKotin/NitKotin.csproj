@@ -3,12 +3,15 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>NitKotin</AssemblyName>
     <RootNamespace>NitKotin</RootNamespace>
-    <Product>NitKotin</Product>
     <AssemblyTitle>NitKotin</AssemblyTitle>
+    <Description>$(Description)</Description>
+    <Company>$(Company)</Company>
+    <Authors>$(Authors)</Authors>
     <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>

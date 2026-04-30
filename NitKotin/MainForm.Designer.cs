@@ -241,7 +241,7 @@ partial class MainForm
         packsPerDayNumericUpDown.Name = "packsPerDayNumericUpDown";
         packsPerDayNumericUpDown.Size = new Size(137, 30);
         packsPerDayNumericUpDown.TabIndex = 5;
-        packsPerDayNumericUpDown.Value = new decimal(new int[] { 3, 0, 0, 0 });
+        packsPerDayNumericUpDown.Value = new decimal(new int[] { 2, 0, 0, 0 });
         // 
         // packsPerDayLabel
         // 

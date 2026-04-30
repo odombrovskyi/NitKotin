@@ -1,0 +1,124 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package
+    Name="$(var.NitKotinProductName)"
+    Manufacturer="$(var.NitKotinManufacturer)"
+    Version="$(var.NitKotinVersion)"
+    UpgradeCode="9D1B55EA-8DA8-4D4C-B6DB-3AC221996D18"
+    Language="1033"
+    Codepage="65001"
+    Scope="perUser"
+    Compressed="yes">
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of NitKotin is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Icon Id="AppIcon.ico" SourceFile="..\NitKotin\Assets\icon.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
+    <Property Id="ARPCOMMENTS" Value="$(var.NitKotinDescription)" />
+    <Property Id="ARPCONTACT" Value="$(var.NitKotinManufacturer)" />
+
+    <ui:WixUI Id="WixUI_Minimal" />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="INSTALLFOLDER" Name="$(var.NitKotinProductName)">
+        <Component Id="ApplicationFilesComponent" Guid="CE4F3A08-B7F0-4F27-AB5F-CEB8A6405D8B">
+          <File Id="NitKotinExeFile" Source="$(var.PublishDir)NitKotin.exe" />
+          <File Id="NitKotinDllFile" Source="$(var.PublishDir)NitKotin.dll" />
+          <File Id="NitKotinDepsFile" Source="$(var.PublishDir)NitKotin.deps.json" />
+          <File Id="NitKotinRuntimeConfigFile" Source="$(var.PublishDir)NitKotin.runtimeconfig.json" />
+          <File Id="NitKotinPdbFile" Source="$(var.PublishDir)NitKotin.pdb" />
+          <RegistryValue
+            Root="HKCU"
+            Key="Software\NitKotin\Installer"
+            Name="ApplicationFiles"
+            Type="integer"
+            Value="1"
+            KeyPath="yes" />
+          <RemoveFile Id="RemoveInstallFolderFiles" Name="*.*" On="uninstall" />
+          <RemoveFolder Id="RemoveInstallFolder" On="uninstall" />
+        </Component>
+
+        <Directory Id="AssetsFolder" Name="Assets">
+          <Component Id="AssetsFilesComponent" Guid="E5C89430-6900-4565-860A-4C5F69E44043">
+            <File Id="AppRuntimeIconFile" Source="$(var.PublishDir)Assets\icon.ico" />
+            <RegistryValue
+              Root="HKCU"
+              Key="Software\NitKotin\Installer"
+              Name="AssetsFiles"
+              Type="integer"
+              Value="1"
+              KeyPath="yes" />
+            <RemoveFile Id="RemoveAssetsFolderFiles" Name="*.*" On="uninstall" />
+            <RemoveFolder Id="RemoveAssetsFolder" On="uninstall" />
+          </Component>
+        </Directory>
+
+        <Directory Id="DataFolder" Name="Data">
+          <Component Id="DataFilesComponent" Guid="6A512289-2B89-41D1-B1D4-2A785F9E5496">
+            <File Id="ProductCatalogDataFile" Source="$(var.PublishDir)Data\product-catalog.ua.json" />
+            <File Id="MotivationalPhrasesDataFile" Source="$(var.PublishDir)Data\motivational-phrases.ua.json" />
+            <RegistryValue
+              Root="HKCU"
+              Key="Software\NitKotin\Installer"
+              Name="DataFiles"
+              Type="integer"
+              Value="1"
+              KeyPath="yes" />
+            <RemoveFile Id="RemoveDataFolderFiles" Name="*.*" On="uninstall" />
+            <RemoveFolder Id="RemoveDataFolder" On="uninstall" />
+          </Component>
+        </Directory>
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="NitKotin">
+        <Component Id="StartMenuShortcutComponent" Guid="385381C4-4F73-4E12-8043-D797ED5FF1AC">
+          <Shortcut
+            Id="StartMenuShortcut"
+            Name="$(var.NitKotinProductName)"
+            Description="Ні! котину мотиватор"
+            Target="[INSTALLFOLDER]NitKotin.exe"
+            WorkingDirectory="INSTALLFOLDER"
+            Icon="AppIcon.ico" />
+          <RemoveFolder Id="ApplicationProgramsFolderCleanup" On="uninstall" />
+          <RegistryValue
+            Root="HKCU"
+            Key="Software\$(var.NitKotinProductName)"
+            Name="StartMenuShortcut"
+            Type="integer"
+            Value="1"
+            KeyPath="yes" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="DesktopFolder">
+      <Component Id="DesktopShortcutComponent" Guid="831762A2-B1AF-4A1E-8D2D-A1508B77D6A2">
+        <Shortcut
+          Id="DesktopShortcut"
+          Name="$(var.NitKotinProductName)"
+          Description="Ні! котину мотиватор"
+          Target="[INSTALLFOLDER]NitKotin.exe"
+          WorkingDirectory="INSTALLFOLDER"
+          Icon="AppIcon.ico" />
+        <RegistryValue
+          Root="HKCU"
+          Key="Software\$(var.NitKotinProductName)"
+          Name="DesktopShortcut"
+          Type="integer"
+          Value="1"
+          KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+
+    <Feature Id="MainFeature" Title="$(var.NitKotinProductName)" Level="1">
+      <ComponentRef Id="ApplicationFilesComponent" />
+      <ComponentRef Id="AssetsFilesComponent" />
+      <ComponentRef Id="DataFilesComponent" />
+      <ComponentRef Id="StartMenuShortcutComponent" />
+      <ComponentRef Id="DesktopShortcutComponent" />
+    </Feature>
+  </Package>
+</Wix>
