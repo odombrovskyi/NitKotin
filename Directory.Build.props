@@ -1,11 +1,11 @@
 <Project>
   <PropertyGroup>
-    <Version>1.0.1</Version>
+    <Version>1.0.3</Version>
     <Product>NitKotin</Product>
     <Company>NitKotin Contributors</Company>
     <Authors>Oleksii Dombrovskyi</Authors>
     <Description>Ukrainian-language desktop app that tracks smoke-free progress, savings, and motivation.</Description>
-    <AssemblyVersion>1.0.1.0</AssemblyVersion>
-    <FileVersion>1.0.1.0</FileVersion>
+    <AssemblyVersion>1.0.3.0</AssemblyVersion>
+    <FileVersion>1.0.3.0</FileVersion>
   </PropertyGroup>
 </Project>

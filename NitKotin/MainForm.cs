@@ -48,6 +48,7 @@ public partial class MainForm : Form
         Icon = _appIcon;
         _overlayForm = new OverlayForm(_config);
         _overlayForm.PositionCommitted += OverlayForm_PositionCommitted;
+        _overlayForm.OverlayDoubleClicked += OverlayForm_OverlayDoubleClicked;
         _overlayForm.VisibleChanged += OverlayForm_VisibleChanged;
 
         var trayMenu = new ContextMenuStrip();
@@ -520,6 +521,11 @@ public partial class MainForm : Form
         UpdateTrayMenuLabels();
     }
 
+    private void OverlayForm_OverlayDoubleClicked(object? sender, EventArgs e)
+    {
+        EnsureMainWindowVisible();
+    }
+
     private void ToggleOverlayMenuItem_Click(object? sender, EventArgs e)
     {
         ToggleOverlayVisibility();
@@ -538,7 +544,7 @@ public partial class MainForm : Form
 
     private void TrayIcon_DoubleClick(object? sender, EventArgs e)
     {
-        ToggleMainWindowVisibility();
+        EnsureMainWindowVisible();
     }
 
     private void TrayMenu_Opening(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -586,6 +592,19 @@ public partial class MainForm : Form
             BringToFront();
         }
 
+        UpdateTrayMenuLabels();
+    }
+
+    private void EnsureMainWindowVisible()
+    {
+        if (!Visible)
+        {
+            Show();
+        }
+
+        WindowState = FormWindowState.Normal;
+        Activate();
+        BringToFront();
         UpdateTrayMenuLabels();
     }
 

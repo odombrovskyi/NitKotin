@@ -81,6 +81,7 @@ public sealed class OverlayForm : Form
     }
 
     public event EventHandler? PositionCommitted;
+    public event EventHandler? OverlayDoubleClicked;
 
     public void UpdateValues(string savingsText, string smokeFreeHoursText)
     {
@@ -155,6 +156,7 @@ public sealed class OverlayForm : Form
         control.MouseDown += DragStart;
         control.MouseMove += DragMove;
         control.MouseUp += DragEnd;
+        control.DoubleClick += Overlay_DoubleClick;
 
         foreach (Control child in control.Controls)
         {
@@ -199,5 +201,10 @@ public sealed class OverlayForm : Form
     private void CloseButton_Click(object? sender, EventArgs e)
     {
         Hide();
+    }
+
+    private void Overlay_DoubleClick(object? sender, EventArgs e)
+    {
+        OverlayDoubleClicked?.Invoke(this, EventArgs.Empty);
     }
 }
