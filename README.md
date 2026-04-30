@@ -88,7 +88,7 @@ dotnet build .\NitKotin.Installer\NitKotin.Installer.wixproj -c Release
 
 `Directory.Build.props`
 
-Поточна версія в репозиторії: `1.0.6`.
+Поточна версія в репозиторії: `1.0.7`.
 
 Для публічного релізу оновлюй `Version` у цьому файлі перед збіркою MSI і використовуй такий самий номер у Git tag / GitHub Release.
 

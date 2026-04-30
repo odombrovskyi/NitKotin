@@ -87,6 +87,7 @@ public partial class MainForm : Form
         packPriceNumericUpDown.ValueChanged += Input_ValueChanged;
 
         Load += MainForm_Load;
+        Shown += MainForm_Shown;
         FormClosing += MainForm_FormClosing;
         FormClosed += MainForm_FormClosed;
         Resize += MainForm_Resize;
@@ -139,6 +140,11 @@ public partial class MainForm : Form
         _refreshTimer.Stop();
         _trayIcon.Dispose();
         _appIcon.Dispose();
+    }
+
+    private void MainForm_Shown(object? sender, EventArgs e)
+    {
+        EnsureMainWindowVisible();
     }
 
     private static Icon LoadAppIcon()
