@@ -1,6 +1,6 @@
-namespace SmokeSaver;
+namespace NitKotin;
 
-using SmokeSaver.Models;
+using NitKotin.Models;
 
 public sealed class OverlayForm : Form
 {

@@ -1,4 +1,4 @@
-namespace SmokeSaver.Models;
+namespace NitKotin.Models;
 
 public sealed class SuggestedProduct
 {

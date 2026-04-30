@@ -1,7 +1,7 @@
 using System.Text.Json;
-using SmokeSaver.Models;
+using NitKotin.Models;
 
-namespace SmokeSaver.Services;
+namespace NitKotin.Services;
 
 public sealed class MotivationalPhraseService
 {

@@ -1,7 +1,7 @@
 using System.Text.Json;
-using SmokeSaver.Models;
+using NitKotin.Models;
 
-namespace SmokeSaver.Services;
+namespace NitKotin.Services;
 
 public sealed class ConfigService
 {
@@ -14,7 +14,7 @@ public sealed class ConfigService
 
     public ConfigService(string? configPath = null)
     {
-        _configPath = configPath ?? Path.Combine(AppContext.BaseDirectory, "smokesaver.config.json");
+        _configPath = configPath ?? Path.Combine(AppContext.BaseDirectory, "nitkotin.config.json");
     }
 
     public string ConfigPath => _configPath;

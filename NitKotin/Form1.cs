@@ -1,8 +1,8 @@
-namespace SmokeSaver;
+namespace NitKotin;
 
-using SmokeSaver.Controls;
-using SmokeSaver.Models;
-using SmokeSaver.Services;
+using NitKotin.Controls;
+using NitKotin.Models;
+using NitKotin.Services;
 
 public partial class Form1 : Form
 {

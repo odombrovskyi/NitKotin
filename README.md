@@ -19,15 +19,15 @@
 ## Запуск
 
 ```powershell
-dotnet build .\SmokeSaver\SmokeSaver.csproj
-dotnet run --project .\SmokeSaver\SmokeSaver.csproj
+dotnet build .\NitKotin\NitKotin.csproj
+dotnet run --project .\NitKotin\NitKotin.csproj
 ```
 
 ## Конфігурація
 
 Файл конфігурації створюється поруч із застосунком:
 
-`smokesaver.config.json`
+`nitkotin.config.json`
 
 Якщо файлу немає або він пошкоджений, застосунок запускається зі значеннями за замовчуванням.
 

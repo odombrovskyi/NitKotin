@@ -1,6 +1,6 @@
 using System.Drawing.Text;
 
-namespace SmokeSaver.Controls;
+namespace NitKotin.Controls;
 
 public sealed class MarqueeLabel : Control
 {

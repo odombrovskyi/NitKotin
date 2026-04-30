@@ -1,6 +1,6 @@
-namespace SmokeSaver.Services;
+namespace NitKotin.Services;
 
-using SmokeSaver.Models;
+using NitKotin.Models;
 
 public sealed class RecoveryTimelineService
 {

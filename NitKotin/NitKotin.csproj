@@ -5,6 +5,10 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>NitKotin</AssemblyName>
+    <RootNamespace>NitKotin</RootNamespace>
+    <Product>NitKotin</Product>
+    <AssemblyTitle>NitKotin</AssemblyTitle>
     <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>

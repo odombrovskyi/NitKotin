@@ -1,6 +1,6 @@
-﻿namespace SmokeSaver;
+﻿namespace NitKotin;
 
-using SmokeSaver.Controls;
+using NitKotin.Controls;
 
 partial class Form1
 {

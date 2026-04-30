@@ -1,4 +1,4 @@
-namespace SmokeSaver;
+namespace NitKotin;
 
 static class Program
 {
