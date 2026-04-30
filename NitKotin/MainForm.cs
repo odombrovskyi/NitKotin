@@ -4,7 +4,7 @@ using NitKotin.Controls;
 using NitKotin.Models;
 using NitKotin.Services;
 
-public partial class Form1 : Form
+public partial class MainForm : Form
 {
     private readonly Icon _appIcon;
     private readonly ConfigService _configService;
@@ -27,7 +27,7 @@ public partial class Form1 : Form
     private SmokingConfig _config;
     private decimal _targetSavedAmount;
 
-    public Form1()
+    public MainForm()
     {
         _configService = new ConfigService();
         var catalogService = new ProductCatalogService();
@@ -82,13 +82,13 @@ public partial class Form1 : Form
         packsPerDayNumericUpDown.ValueChanged += Input_ValueChanged;
         packPriceNumericUpDown.ValueChanged += Input_ValueChanged;
 
-        Load += Form1_Load;
-        FormClosing += Form1_FormClosing;
-        FormClosed += Form1_FormClosed;
-        Resize += Form1_Resize;
+        Load += MainForm_Load;
+        FormClosing += MainForm_FormClosing;
+        FormClosed += MainForm_FormClosed;
+        Resize += MainForm_Resize;
     }
 
-    private void Form1_Load(object? sender, EventArgs e)
+    private void MainForm_Load(object? sender, EventArgs e)
     {
         _isInitializing = true;
         quitDateTimePicker.Value = NormalizeDateTime(_config.QuitDateTime);
@@ -112,7 +112,7 @@ public partial class Form1 : Form
         _refreshTimer.Start();
     }
 
-    private void Form1_FormClosing(object? sender, FormClosingEventArgs e)
+    private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
     {
         if (e.CloseReason == CloseReason.UserClosing && !_isExiting)
         {
@@ -132,7 +132,7 @@ public partial class Form1 : Form
         }
     }
 
-    private void Form1_FormClosed(object? sender, FormClosedEventArgs e)
+    private void MainForm_FormClosed(object? sender, FormClosedEventArgs e)
     {
         _autoSaveTimer.Stop();
         _marqueeTimer.Stop();
@@ -482,7 +482,7 @@ public partial class Form1 : Form
         UpdateTrayMenuLabels();
     }
 
-    private void Form1_Resize(object? sender, EventArgs e)
+    private void MainForm_Resize(object? sender, EventArgs e)
     {
         UpdateTrayMenuLabels();
     }

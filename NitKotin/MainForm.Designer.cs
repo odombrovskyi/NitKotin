@@ -2,7 +2,7 @@
 
 using NitKotin.Controls;
 
-partial class Form1
+partial class MainForm
 {
     /// <summary>
     ///  Required designer variable.
@@ -897,7 +897,7 @@ partial class Form1
         statusLabel.Text = "Стан";
         statusLabel.Visible = false;
         // 
-        // Form1
+        // MainForm
         // 
         AutoScaleDimensions = new SizeF(8F, 20F);
         AutoScaleMode = AutoScaleMode.Font;
@@ -915,7 +915,7 @@ partial class Form1
         FormBorderStyle = FormBorderStyle.FixedSingle;
         Margin = new Padding(3, 4, 3, 4);
         MaximizeBox = false;
-        Name = "Form1";
+        Name = "MainForm";
         StartPosition = FormStartPosition.CenterScreen;
         Text = "Ні! котину мотиватор";
         headerPanel.ResumeLayout(false);
