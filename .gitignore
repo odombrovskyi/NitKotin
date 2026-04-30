@@ -1,0 +1,5 @@
+/SmokeSaver/obj
+/SmokeSaver/bin
+.vscode
+.vs
+/SmokeSaver/*.user
