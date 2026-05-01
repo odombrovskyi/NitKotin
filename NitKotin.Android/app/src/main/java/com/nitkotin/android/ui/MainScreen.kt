@@ -81,8 +81,6 @@ private enum class MainTab(val index: Int) {
 @Composable
 fun MainScreen(
     state: MainUiState,
-    showNotificationPermissionPrompt: Boolean,
-    onEnableNotifications: () -> Unit,
     onLanguageChanged: (AppLanguage) -> Unit,
     onSaveSettings: (Instant, Double, Double) -> Unit,
     onRefreshProducts: () -> Unit,
@@ -191,8 +189,6 @@ fun MainScreen(
 
                     MainTab.Overview.index -> OverviewPage(
                         state = state,
-                        showNotificationPermissionPrompt = showNotificationPermissionPrompt,
-                        onEnableNotifications = onEnableNotifications,
                         onStartTracking = onStartTracking,
                     )
 
@@ -209,8 +205,6 @@ fun MainScreen(
 @Composable
 private fun OverviewPage(
     state: MainUiState,
-    showNotificationPermissionPrompt: Boolean,
-    onEnableNotifications: () -> Unit,
     onStartTracking: () -> Unit,
 ) {
     val language = state.language
@@ -222,27 +216,6 @@ private fun OverviewPage(
         contentPadding = PaddingValues(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        if (showNotificationPermissionPrompt) {
-            item {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(LocalizationService.getString(language, "notification_title"), style = MaterialTheme.typography.titleMedium)
-                            Text(LocalizationService.getString(language, "notification_channel_description"), style = MaterialTheme.typography.bodyMedium)
-                        }
-                        Button(onClick = onEnableNotifications) {
-                            Text(LocalizationService.getString(language, "enable_notifications"))
-                        }
-                    }
-                }
-            }
-        }
         if (!state.hasStartedTracking) {
             item {
                 Card(modifier = Modifier.fillMaxWidth()) {
@@ -470,6 +443,35 @@ private fun ProductSuggestionCard(
         colors = CardDefaults.cardColors(containerColor = containerColor),
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(Icons.Rounded.Sell, contentDescription = null)
+                        Text(
+                            text = product.category,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                    Text(
+                        text = "${product.priceUah.toInt()} ${LocalizationService.getString(language, "currency_major")}",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                    )
+                }
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -502,11 +504,7 @@ private fun ProductSuggestionCard(
                     enabled = false,
                     label = { Text(product.category) },
                 )
-                Text(
-                    text = "${product.priceUah.toInt()} ${LocalizationService.getString(language, "currency_major")}",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.ExtraBold,
-                )
+                Text(product.shortDescription, style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
             }
         }
     }

@@ -14,7 +14,6 @@ import com.nitkotin.android.domain.LocalizationService
 import com.nitkotin.android.domain.ProductSuggestionService
 import com.nitkotin.android.domain.RecoveryTimelineService
 import com.nitkotin.android.domain.SavingsCalculator
-import com.nitkotin.android.notification.ProgressNotificationManager
 import com.nitkotin.android.widget.ProgressWidgetUpdater
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
@@ -39,7 +38,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val catalogRepository = AssetCatalogRepository(application)
     private val phraseRepository = AssetMotivationalPhraseRepository(application)
     private val recoveryTimelineService = RecoveryTimelineService()
-    private val notificationManager = ProgressNotificationManager(application)
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
@@ -215,7 +213,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
         _uiState.value = uiState
         if (updateExternalSurfaces) {
-            notificationManager.showProgress(uiState)
             ProgressWidgetUpdater.update(app, uiState)
             ProgressRefreshScheduler.schedule(app)
         }

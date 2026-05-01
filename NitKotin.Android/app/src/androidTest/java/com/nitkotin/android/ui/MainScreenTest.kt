@@ -43,7 +43,7 @@ class MainScreenTest {
     )
 
     @Test
-    fun firstRunState_showsStartTrackingAndNotificationPrompt() {
+    fun firstRunState_showsStartTrackingAndMotivation() {
         val state = MainUiState(
             language = AppLanguage.ENGLISH,
             hasStartedTracking = false,
@@ -60,8 +60,6 @@ class MainScreenTest {
             NitKotinTheme {
                 MainScreen(
                     state = state,
-                    showNotificationPermissionPrompt = true,
-                    onEnableNotifications = {},
                     onLanguageChanged = {},
                     onSaveSettings = { _, _, _ -> },
                     onRefreshProducts = {},
@@ -71,7 +69,6 @@ class MainScreenTest {
         }
 
         composeRule.onNodeWithText("I quit smoking!").assertIsDisplayed()
-        composeRule.onNodeWithText("Enable").assertIsDisplayed()
         composeRule.onNodeWithText("Whiter teeth").assertIsDisplayed()
     }
 
@@ -101,8 +98,6 @@ class MainScreenTest {
                             )
                         ),
                     ),
-                    showNotificationPermissionPrompt = false,
-                    onEnableNotifications = {},
                     onLanguageChanged = { selectedLanguage = it },
                     onSaveSettings = { _, _, _ -> },
                     onRefreshProducts = {},
@@ -135,8 +130,6 @@ class MainScreenTest {
                         ),
                         recoveryMilestones = emptyList(),
                     ),
-                    showNotificationPermissionPrompt = false,
-                    onEnableNotifications = {},
                     onLanguageChanged = {},
                     onSaveSettings = { _, _, _ -> },
                     onRefreshProducts = {},
@@ -172,8 +165,6 @@ class MainScreenTest {
                             )
                         ),
                     ),
-                    showNotificationPermissionPrompt = true,
-                    onEnableNotifications = {},
                     onLanguageChanged = {},
                     onSaveSettings = { _, _, _ -> },
                     onRefreshProducts = {},
@@ -183,7 +174,6 @@ class MainScreenTest {
         }
 
         composeRule.onNodeWithText("Я кинув палити!").assertIsDisplayed()
-        composeRule.onNodeWithText("Увімкнути").assertIsDisplayed()
         composeRule.onNodeWithText("Здоров'я").performClick()
         composeRule.onNodeWithTag("recovery_page")
             .performScrollToNode(hasText("Поточний етап"))
@@ -191,9 +181,8 @@ class MainScreenTest {
     }
 
     @Test
-    fun callbacks_fire_forRefreshAndNotificationPermission() {
+    fun refreshCallback_fires() {
         var refreshCount = 0
-        var permissionCount = 0
 
         composeRule.setContent {
             NitKotinTheme {
@@ -208,8 +197,6 @@ class MainScreenTest {
                         currentPhrase = "phrase",
                         productUpdatedAtText = "Updated: 2026-05-01 12:00",
                     ),
-                    showNotificationPermissionPrompt = true,
-                    onEnableNotifications = { permissionCount++ },
                     onLanguageChanged = {},
                     onSaveSettings = { _, _, _ -> },
                     onRefreshProducts = { refreshCount++ },
@@ -218,11 +205,9 @@ class MainScreenTest {
             }
         }
 
-        composeRule.onNodeWithText("Enable").performClick()
         composeRule.onNodeWithText("Products").performClick()
         composeRule.onNodeWithText("Refresh picks").performClick()
 
-        assertEquals(1, permissionCount)
         assertEquals(1, refreshCount)
     }
 
@@ -235,8 +220,6 @@ class MainScreenTest {
             NitKotinTheme {
                 MainScreen(
                     state = englishTrackedState(),
-                    showNotificationPermissionPrompt = false,
-                    onEnableNotifications = {},
                     onLanguageChanged = {},
                     onSaveSettings = { _, packs, price ->
                         updatedPacks = packs
@@ -275,8 +258,6 @@ class MainScreenTest {
                         currentPhrase = "Whiter teeth",
                         productUpdatedAtText = "Updated: 2026-05-01 12:00",
                     ),
-                    showNotificationPermissionPrompt = false,
-                    onEnableNotifications = {},
                     onLanguageChanged = {},
                     onSaveSettings = { _, _, _ -> },
                     onRefreshProducts = {},
@@ -305,8 +286,6 @@ class MainScreenTest {
                         currentPhrase = "Краща витривалість і дихання",
                         productUpdatedAtText = "Оновлено: 2026-05-01 12:00",
                     ),
-                    showNotificationPermissionPrompt = false,
-                    onEnableNotifications = {},
                     onLanguageChanged = {},
                     onSaveSettings = { _, _, _ -> },
                     onRefreshProducts = {},
@@ -341,8 +320,6 @@ class MainScreenTest {
                             ),
                         ),
                     ),
-                    showNotificationPermissionPrompt = false,
-                    onEnableNotifications = {},
                     onLanguageChanged = {},
                     onSaveSettings = { _, _, _ -> },
                     onRefreshProducts = {},
