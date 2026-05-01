@@ -124,7 +124,7 @@ fun MainScreen(
                                 Text(LocalizationService.getString(language, "notification_channel_description"), style = MaterialTheme.typography.bodyMedium)
                             }
                             Button(onClick = onEnableNotifications) {
-                                Text("Enable")
+                                Text(LocalizationService.getString(language, "enable_notifications"))
                             }
                         }
                     }

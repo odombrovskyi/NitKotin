@@ -1,3 +1,5 @@
+import com.android.build.api.dsl.ManagedVirtualDevice
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -49,6 +51,57 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    testOptions {
+        managedDevices {
+            localDevices {
+                create("pixel6Api34") {
+                    device = "Pixel 6"
+                    apiLevel = 34
+                    systemImageSource = "aosp-atd"
+                }
+
+                create("pixelTabletApi34") {
+                    device = "Pixel Tablet"
+                    apiLevel = 34
+                    systemImageSource = "aosp-atd"
+                }
+            }
+
+            groups {
+                create("smoke") {
+                    targetDevices.add(devices["pixel6Api34"])
+                }
+
+                create("formFactors") {
+                    targetDevices.add(devices["pixel6Api34"])
+                    targetDevices.add(devices["pixelTabletApi34"])
+                }
+            }
+        }
+    }
+}
+
+tasks.register("ciAndroidLocal") {
+    group = "verification"
+    description = "Builds the app, unit tests, and androidTest APKs without requiring a running device."
+    dependsOn(
+        ":app:assembleDebug",
+        ":app:testDebugUnitTest",
+        ":app:assembleDebugAndroidTest",
+    )
+}
+
+tasks.register("ciAndroidManagedSmoke") {
+    group = "verification"
+    description = "Runs Android instrumentation smoke tests on the managed Pixel 6 API 34 device."
+    dependsOn(":app:pixel6Api34DebugAndroidTest")
+}
+
+tasks.register("ciAndroidManagedFormFactors") {
+    group = "verification"
+    description = "Runs Android instrumentation tests on the managed phone and tablet devices."
+    dependsOn(":app:formFactorsGroupDebugAndroidTest")
 }
 
 dependencies {
@@ -74,6 +127,10 @@ dependencies {
     implementation("androidx.compose.material3:material3-window-size-class")
     implementation("androidx.compose.material:material-icons-extended")
     testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:core-ktx:1.6.1")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
