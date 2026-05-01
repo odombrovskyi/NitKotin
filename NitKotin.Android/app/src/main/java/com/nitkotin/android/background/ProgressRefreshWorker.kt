@@ -36,6 +36,7 @@ class ProgressRefreshWorker(
 
         ProgressNotificationManager(applicationContext).showProgress(state)
         ProgressWidgetUpdater.update(applicationContext, state)
+        ProgressRefreshScheduler.scheduleNext(applicationContext)
         return Result.success()
     }
 }

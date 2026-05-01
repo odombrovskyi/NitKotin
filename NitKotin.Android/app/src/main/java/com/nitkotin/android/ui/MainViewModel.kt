@@ -9,6 +9,7 @@ import com.nitkotin.android.data.model.SmokingConfig
 import com.nitkotin.android.data.repository.AssetCatalogRepository
 import com.nitkotin.android.data.repository.AssetMotivationalPhraseRepository
 import com.nitkotin.android.data.repository.PreferencesRepository
+import com.nitkotin.android.background.ProgressRefreshScheduler
 import com.nitkotin.android.domain.LocalizationService
 import com.nitkotin.android.domain.ProductSuggestionService
 import com.nitkotin.android.domain.RecoveryTimelineService
@@ -16,6 +17,7 @@ import com.nitkotin.android.domain.SavingsCalculator
 import com.nitkotin.android.notification.ProgressNotificationManager
 import com.nitkotin.android.widget.ProgressWidgetUpdater
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,6 +29,11 @@ import java.time.Duration
 import java.time.Instant
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
+    private companion object {
+        const val UiTickMillis = 1000L
+        const val PhraseRotationIntervalSeconds = 3
+    }
+
     private val app = application
     private val preferencesRepository = PreferencesRepository(application)
     private val catalogRepository = AssetCatalogRepository(application)
@@ -43,16 +50,58 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private var phraseIndex = 0
     private var lastProductRefresh = Instant.now()
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+    private var elapsedSeconds = 0L
+    private var uiTickerJob: Job? = null
 
     init {
         observeConfig()
-        startTicker()
+    }
+
+    fun setScreenActive(isActive: Boolean) {
+        if (isActive) {
+            if (uiTickerJob?.isActive == true) {
+                return
+            }
+            uiTickerJob = viewModelScope.launch {
+                publishState(
+                    latestConfig,
+                    lastProductRefresh,
+                    rotatePhrase = false,
+                    forceSuggestionRefresh = false,
+                    updateExternalSurfaces = false,
+                )
+                while (true) {
+                    delay(UiTickMillis)
+                    elapsedSeconds += 1
+                    publishState(
+                        latestConfig,
+                        lastProductRefresh,
+                        rotatePhrase = elapsedSeconds % PhraseRotationIntervalSeconds == 0L,
+                        forceSuggestionRefresh = false,
+                        updateExternalSurfaces = false,
+                    )
+                }
+            }
+        } else {
+            uiTickerJob?.cancel()
+            uiTickerJob = null
+        }
     }
 
     fun setLanguage(language: AppLanguage) {
         viewModelScope.launch {
             preferencesRepository.setLanguage(language)
         }
+    }
+
+    fun updateSettings(quitDateTime: Instant, packsPerDay: Double, packPriceUah: Double) {
+        persistInputs(
+            latestConfig.copy(
+                quitDateTime = quitDateTime,
+                packsPerDay = packsPerDay,
+                packPriceUah = packPriceUah,
+            )
+        )
     }
 
     fun updatePacksPerDay(value: Double) {
@@ -78,7 +127,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun refreshProducts() {
         viewModelScope.launch {
             lastProductRefresh = Instant.now()
-            publishState(latestConfig, lastProductRefresh, rotatePhrase = false, forceSuggestionRefresh = true)
+            publishState(
+                latestConfig,
+                lastProductRefresh,
+                rotatePhrase = false,
+                forceSuggestionRefresh = true,
+                updateExternalSurfaces = true,
+            )
         }
     }
 
@@ -101,17 +156,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (phraseIndex >= latestPhrases.size) {
                     phraseIndex = 0
                 }
+                elapsedSeconds = 0L
                 lastProductRefresh = Instant.now()
-                publishState(config, lastProductRefresh, rotatePhrase = false, forceSuggestionRefresh = true)
-            }
-        }
-    }
-
-    private fun startTicker() {
-        viewModelScope.launch {
-            while (true) {
-                publishState(latestConfig, lastProductRefresh, rotatePhrase = true, forceSuggestionRefresh = false)
-                delay(1000)
+                publishState(
+                    config,
+                    lastProductRefresh,
+                    rotatePhrase = false,
+                    forceSuggestionRefresh = true,
+                    updateExternalSurfaces = true,
+                )
             }
         }
     }
@@ -121,6 +174,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         lastRefresh: Instant,
         rotatePhrase: Boolean,
         forceSuggestionRefresh: Boolean,
+        updateExternalSurfaces: Boolean,
     ) {
         if (rotatePhrase && latestPhrases.isNotEmpty()) {
             phraseIndex = (phraseIndex + 1) % latestPhrases.size
@@ -146,8 +200,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             now = now,
         )
         _uiState.value = uiState
-        notificationManager.showProgress(uiState)
-        ProgressWidgetUpdater.update(app, uiState)
+        if (updateExternalSurfaces) {
+            notificationManager.showProgress(uiState)
+            ProgressWidgetUpdater.update(app, uiState)
+            ProgressRefreshScheduler.schedule(app)
+        }
     }
 
     private fun buildUiState(

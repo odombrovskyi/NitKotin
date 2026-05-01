@@ -16,12 +16,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.activity.viewModels
 import com.nitkotin.android.ui.MainScreen
 import com.nitkotin.android.ui.MainViewModel
 import com.nitkotin.android.ui.theme.NitKotinTheme
 
 class MainActivity : ComponentActivity() {
+    private val mainViewModel: MainViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -44,8 +46,7 @@ class MainActivity : ComponentActivity() {
                         notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                     }
                 }
-                val viewModel: MainViewModel = viewModel()
-                val state by viewModel.uiState.collectAsStateWithLifecycle()
+                val state by mainViewModel.uiState.collectAsStateWithLifecycle()
                 MainScreen(
                     state = state,
                     showNotificationPermissionPrompt = !notificationPermissionGranted,
@@ -54,14 +55,22 @@ class MainActivity : ComponentActivity() {
                             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                         }
                     },
-                    onLanguageChanged = viewModel::setLanguage,
-                    onQuitDateChanged = viewModel::updateQuitDateTime,
-                    onPacksChanged = viewModel::updatePacksPerDay,
-                    onPriceChanged = viewModel::updatePackPrice,
-                    onRefreshProducts = viewModel::refreshProducts,
-                    onStartTracking = viewModel::startTrackingNow,
+                    onLanguageChanged = mainViewModel::setLanguage,
+                    onSaveSettings = mainViewModel::updateSettings,
+                    onRefreshProducts = mainViewModel::refreshProducts,
+                    onStartTracking = mainViewModel::startTrackingNow,
                 )
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        mainViewModel.setScreenActive(true)
+    }
+
+    override fun onStop() {
+        mainViewModel.setScreenActive(false)
+        super.onStop()
     }
 }

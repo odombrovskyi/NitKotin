@@ -6,9 +6,10 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
-import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import com.nitkotin.android.data.model.AppLanguage
 import com.nitkotin.android.data.model.RecoveryMilestone
 import com.nitkotin.android.data.model.RecoveryMilestoneSnapshot
@@ -62,9 +63,7 @@ class MainScreenTest {
                     showNotificationPermissionPrompt = true,
                     onEnableNotifications = {},
                     onLanguageChanged = {},
-                    onQuitDateChanged = {},
-                    onPacksChanged = {},
-                    onPriceChanged = {},
+                    onSaveSettings = { _, _, _ -> },
                     onRefreshProducts = {},
                     onStartTracking = {},
                 )
@@ -105,9 +104,7 @@ class MainScreenTest {
                     showNotificationPermissionPrompt = false,
                     onEnableNotifications = {},
                     onLanguageChanged = { selectedLanguage = it },
-                    onQuitDateChanged = {},
-                    onPacksChanged = {},
-                    onPriceChanged = {},
+                    onSaveSettings = { _, _, _ -> },
                     onRefreshProducts = {},
                     onStartTracking = {},
                 )
@@ -141,15 +138,14 @@ class MainScreenTest {
                     showNotificationPermissionPrompt = false,
                     onEnableNotifications = {},
                     onLanguageChanged = {},
-                    onQuitDateChanged = {},
-                    onPacksChanged = {},
-                    onPriceChanged = {},
+                    onSaveSettings = { _, _, _ -> },
                     onRefreshProducts = {},
                     onStartTracking = {},
                 )
             }
         }
 
+        composeRule.onNodeWithText("Products").performClick()
         composeRule.onNodeWithText("Refresh picks").assertIsDisplayed()
         composeRule.onNodeWithText("Ceramic mug").assertIsDisplayed()
     }
@@ -179,9 +175,7 @@ class MainScreenTest {
                     showNotificationPermissionPrompt = true,
                     onEnableNotifications = {},
                     onLanguageChanged = {},
-                    onQuitDateChanged = {},
-                    onPacksChanged = {},
-                    onPriceChanged = {},
+                    onSaveSettings = { _, _, _ -> },
                     onRefreshProducts = {},
                     onStartTracking = {},
                 )
@@ -190,7 +184,8 @@ class MainScreenTest {
 
         composeRule.onNodeWithText("Я кинув палити!").assertIsDisplayed()
         composeRule.onNodeWithText("Увімкнути").assertIsDisplayed()
-        composeRule.onNodeWithTag("main_screen_list")
+        composeRule.onNodeWithText("Здоров'я").performClick()
+        composeRule.onNodeWithTag("recovery_page")
             .performScrollToNode(hasText("Поточний етап"))
         composeRule.onNodeWithText("Поточний етап").assertIsDisplayed()
     }
@@ -216,9 +211,7 @@ class MainScreenTest {
                     showNotificationPermissionPrompt = true,
                     onEnableNotifications = { permissionCount++ },
                     onLanguageChanged = {},
-                    onQuitDateChanged = {},
-                    onPacksChanged = {},
-                    onPriceChanged = {},
+                    onSaveSettings = { _, _, _ -> },
                     onRefreshProducts = { refreshCount++ },
                     onStartTracking = {},
                 )
@@ -226,8 +219,7 @@ class MainScreenTest {
         }
 
         composeRule.onNodeWithText("Enable").performClick()
-        composeRule.onNodeWithTag("main_screen_list")
-            .performScrollToNode(hasText("Refresh picks"))
+        composeRule.onNodeWithText("Products").performClick()
         composeRule.onNodeWithText("Refresh picks").performClick()
 
         assertEquals(1, permissionCount)
@@ -235,7 +227,10 @@ class MainScreenTest {
     }
 
     @Test
-    fun inputFields_acceptUpdatedValues() {
+    fun settingsDialog_savesUpdatedValues() {
+        var updatedPacks = 0.0
+        var updatedPrice = 0.0
+
         composeRule.setContent {
             NitKotinTheme {
                 MainScreen(
@@ -243,20 +238,23 @@ class MainScreenTest {
                     showNotificationPermissionPrompt = false,
                     onEnableNotifications = {},
                     onLanguageChanged = {},
-                    onQuitDateChanged = {},
-                    onPacksChanged = {},
-                    onPriceChanged = {},
+                    onSaveSettings = { _, packs, price ->
+                        updatedPacks = packs
+                        updatedPrice = price
+                    },
                     onRefreshProducts = {},
                     onStartTracking = {},
                 )
             }
         }
 
-        composeRule.onAllNodes(hasSetTextAction())[0].performTextInput("3")
-        composeRule.onAllNodes(hasSetTextAction())[1].performTextInput("200")
+        composeRule.onNodeWithContentDescription("Settings").performClick()
+        composeRule.onAllNodes(hasSetTextAction())[0].performTextReplacement("3")
+        composeRule.onAllNodes(hasSetTextAction())[1].performTextReplacement("200")
+        composeRule.onNodeWithText("Save").performClick()
 
-        composeRule.onNodeWithText("Packs per day").assertIsDisplayed()
-        composeRule.onNodeWithText("Pack price, UAH").assertIsDisplayed()
+        assertEquals(3.0, updatedPacks, 0.0)
+        assertEquals(200.0, updatedPrice, 0.0)
     }
 
     @Test
@@ -280,9 +278,7 @@ class MainScreenTest {
                     showNotificationPermissionPrompt = false,
                     onEnableNotifications = {},
                     onLanguageChanged = {},
-                    onQuitDateChanged = {},
-                    onPacksChanged = {},
-                    onPriceChanged = {},
+                    onSaveSettings = { _, _, _ -> },
                     onRefreshProducts = {},
                     onStartTracking = { startTrackingCount++ },
                 )
@@ -312,15 +308,14 @@ class MainScreenTest {
                     showNotificationPermissionPrompt = false,
                     onEnableNotifications = {},
                     onLanguageChanged = {},
-                    onQuitDateChanged = {},
-                    onPacksChanged = {},
-                    onPriceChanged = {},
+                    onSaveSettings = { _, _, _ -> },
                     onRefreshProducts = {},
                     onStartTracking = {},
                 )
             }
         }
 
+        composeRule.onNodeWithText("Товари").performClick()
         composeRule.onNodeWithText("Ще трохи заощаджень і з'являться нові ідеї покупок.").assertIsDisplayed()
         composeRule.onNodeWithText("Оновлено: 2026-05-01 12:00").assertIsDisplayed()
     }
@@ -349,20 +344,19 @@ class MainScreenTest {
                     showNotificationPermissionPrompt = false,
                     onEnableNotifications = {},
                     onLanguageChanged = {},
-                    onQuitDateChanged = {},
-                    onPacksChanged = {},
-                    onPriceChanged = {},
+                    onSaveSettings = { _, _, _ -> },
                     onRefreshProducts = {},
                     onStartTracking = {},
                 )
             }
         }
 
-        composeRule.onNodeWithTag("main_screen_list").performScrollToNode(hasText("Completed"))
+        composeRule.onNodeWithText("Health").performClick()
+        composeRule.onNodeWithTag("recovery_page").performScrollToNode(hasText("Completed"))
         composeRule.onNodeWithText("Completed").assertIsDisplayed()
-        composeRule.onNodeWithTag("main_screen_list").performScrollToNode(hasText("Current"))
+        composeRule.onNodeWithTag("recovery_page").performScrollToNode(hasText("Current"))
         composeRule.onNodeWithText("Current").assertIsDisplayed()
-        composeRule.onNodeWithTag("main_screen_list").performScrollToNode(hasText("Coming up"))
+        composeRule.onNodeWithTag("recovery_page").performScrollToNode(hasText("Coming up"))
         composeRule.onNodeWithText("Coming up").assertIsDisplayed()
     }
 }

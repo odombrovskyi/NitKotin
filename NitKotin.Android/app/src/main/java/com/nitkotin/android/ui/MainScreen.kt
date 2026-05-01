@@ -5,79 +5,104 @@ import android.app.TimePickerDialog
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CalendarMonth
-import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.nitkotin.android.R
 import com.nitkotin.android.data.model.AppLanguage
+import com.nitkotin.android.data.model.RecoveryMilestoneSnapshot
+import com.nitkotin.android.data.model.RecoveryMilestoneState
 import com.nitkotin.android.data.model.SuggestedProduct
 import com.nitkotin.android.domain.LocalizationService
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+private enum class MainTab(val index: Int) {
+    Products(0),
+    Overview(1),
+    Recovery(2),
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     state: MainUiState,
     showNotificationPermissionPrompt: Boolean,
     onEnableNotifications: () -> Unit,
     onLanguageChanged: (AppLanguage) -> Unit,
-    onQuitDateChanged: (Instant) -> Unit,
-    onPacksChanged: (Double) -> Unit,
-    onPriceChanged: (Double) -> Unit,
+    onSaveSettings: (Instant, Double, Double) -> Unit,
     onRefreshProducts: () -> Unit,
     onStartTracking: () -> Unit,
 ) {
     val language = state.language
-    val context = LocalContext.current
-    val configuration = LocalConfiguration.current
-    val isTabletLike = configuration.screenWidthDp >= 840
-    val formattedQuitDate = remember(state.quitDateTime) {
-        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
-            .withZone(ZoneId.systemDefault())
-            .format(state.quitDateTime)
+    val pagerState = rememberPagerState(initialPage = MainTab.Overview.index) { MainTab.entries.size }
+    val coroutineScope = rememberCoroutineScope()
+    var isSettingsOpen by rememberSaveable { mutableStateOf(false) }
+
+    if (isSettingsOpen) {
+        SettingsDialog(
+            state = state,
+            onDismiss = { isSettingsOpen = false },
+            onSave = { quitDateTime, packsPerDay, packPrice ->
+                onSaveSettings(quitDateTime, packsPerDay, packPrice)
+                isSettingsOpen = false
+            },
+        )
     }
+
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
                 title = { Text(LocalizationService.getString(language, "app_title")) },
                 actions = {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
                         FilterChip(
                             selected = language == AppLanguage.ENGLISH,
                             onClick = { onLanguageChanged(AppLanguage.ENGLISH) },
@@ -102,166 +127,68 @@ fun MainScreen(
                                 )
                             },
                         )
+                        IconButton(onClick = { isSettingsOpen = true }) {
+                            Icon(
+                                imageVector = Icons.Rounded.Settings,
+                                contentDescription = LocalizationService.getString(language, "settings_title"),
+                            )
+                        }
                     }
                 },
             )
         },
     ) { paddingValues ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .testTag("main_screen_list")
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(paddingValues),
         ) {
-            if (showNotificationPermissionPrompt) {
-                item {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(LocalizationService.getString(language, "notification_title"), style = MaterialTheme.typography.titleMedium)
-                                Text(LocalizationService.getString(language, "notification_channel_description"), style = MaterialTheme.typography.bodyMedium)
+            TabRow(selectedTabIndex = pagerState.currentPage) {
+                MainTab.entries.forEach { tab ->
+                    Tab(
+                        selected = pagerState.currentPage == tab.index,
+                        onClick = {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(tab.index)
                             }
-                            Button(onClick = onEnableNotifications) {
-                                Text(LocalizationService.getString(language, "enable_notifications"))
-                            }
-                        }
-                    }
+                        },
+                        text = {
+                            Text(
+                                when (tab) {
+                                    MainTab.Products -> LocalizationService.getString(language, "tab_products")
+                                    MainTab.Overview -> LocalizationService.getString(language, "tab_overview")
+                                    MainTab.Recovery -> LocalizationService.getString(language, "tab_recovery")
+                                },
+                            )
+                        },
+                    )
                 }
             }
-            item {
-                if (isTabletLike) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Card(modifier = Modifier.weight(1f)) {
-                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Text(LocalizationService.getString(language, "saved_caption"), style = MaterialTheme.typography.labelLarge)
-                                Text(state.savedAmountText, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                                Text(LocalizationService.getString(language, "elapsed_caption"), style = MaterialTheme.typography.labelLarge)
-                                Text(state.elapsedText, style = MaterialTheme.typography.bodyLarge)
-                                Text(state.dashboardHint, style = MaterialTheme.typography.bodyMedium)
-                                if (!state.hasStartedTracking) {
-                                    Text(state.firstRunMessage, style = MaterialTheme.typography.bodyMedium)
-                                    Button(onClick = onStartTracking) {
-                                        Text(LocalizationService.getString(language, "quit_now"))
-                                    }
-                                }
-                            }
-                        }
-                        Card(modifier = Modifier.weight(1f)) {
-                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Text(LocalizationService.getString(language, "quit_date"), style = MaterialTheme.typography.labelLarge)
-                                Button(
-                                    onClick = {
-                                        showDateTimePicker(context, state.quitDateTime, onQuitDateChanged)
-                                    },
-                                ) {
-                                    Icon(Icons.Rounded.CalendarMonth, contentDescription = null)
-                                    Text(formattedQuitDate, modifier = Modifier.padding(start = 8.dp))
-                                }
-                                FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    OutlinedTextField(
-                                        value = state.packsPerDay.toString(),
-                                        onValueChange = { it.toDoubleOrNull()?.let(onPacksChanged) },
-                                        label = { Text(LocalizationService.getString(language, "packs_per_day")) },
-                                    )
-                                    OutlinedTextField(
-                                        value = state.packPriceUah.toString(),
-                                        onValueChange = { it.toDoubleOrNull()?.let(onPriceChanged) },
-                                        label = { Text(LocalizationService.getString(language, "pack_price")) },
-                                    )
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Text(LocalizationService.getString(language, "saved_caption"), style = MaterialTheme.typography.labelLarge)
-                                Text(state.savedAmountText, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                                Text(LocalizationService.getString(language, "elapsed_caption"), style = MaterialTheme.typography.labelLarge)
-                                Text(state.elapsedText, style = MaterialTheme.typography.bodyLarge)
-                                Text(state.dashboardHint, style = MaterialTheme.typography.bodyMedium)
-                                if (!state.hasStartedTracking) {
-                                    Text(state.firstRunMessage, style = MaterialTheme.typography.bodyMedium)
-                                    Button(onClick = onStartTracking) {
-                                        Text(LocalizationService.getString(language, "quit_now"))
-                                    }
-                                }
-                            }
-                        }
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Text(LocalizationService.getString(language, "quit_date"), style = MaterialTheme.typography.labelLarge)
-                                Button(
-                                    onClick = {
-                                        showDateTimePicker(context, state.quitDateTime, onQuitDateChanged)
-                                    },
-                                ) {
-                                    Icon(Icons.Rounded.CalendarMonth, contentDescription = null)
-                                    Text(formattedQuitDate, modifier = Modifier.padding(start = 8.dp))
-                                }
-                                FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    OutlinedTextField(
-                                        value = state.packsPerDay.toString(),
-                                        onValueChange = { it.toDoubleOrNull()?.let(onPacksChanged) },
-                                        label = { Text(LocalizationService.getString(language, "packs_per_day")) },
-                                    )
-                                    OutlinedTextField(
-                                        value = state.packPriceUah.toString(),
-                                        onValueChange = { it.toDoubleOrNull()?.let(onPriceChanged) },
-                                        label = { Text(LocalizationService.getString(language, "pack_price")) },
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            item {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(LocalizationService.getString(language, "motivation_header"), style = MaterialTheme.typography.titleMedium)
-                        Text(state.currentPhrase, style = MaterialTheme.typography.bodyLarge)
-                        Text(LocalizationService.getString(language, "motivation_rotating"), style = MaterialTheme.typography.labelMedium)
-                    }
-                }
-            }
-            item {
-                ProductsSection(
-                    language = language,
-                    productUpdatedAtText = state.productUpdatedAtText,
-                    productSuggestions = state.productSuggestions,
-                    isTabletLike = isTabletLike,
-                    onRefreshProducts = onRefreshProducts,
-                )
-            }
-            item {
-                Text(LocalizationService.getString(language, "recovery_header"), style = MaterialTheme.typography.titleMedium)
-            }
-            items(state.recoveryMilestones) { milestone ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(milestone.milestone.timeframeLabel, style = MaterialTheme.typography.labelLarge)
-                        Text(milestone.milestone.title, style = MaterialTheme.typography.titleMedium)
-                        Text(milestone.milestone.description, style = MaterialTheme.typography.bodyMedium)
-                        Text(
-                            when (milestone.state) {
-                                com.nitkotin.android.data.model.RecoveryMilestoneState.Completed -> LocalizationService.getString(language, "recovery_completed")
-                                com.nitkotin.android.data.model.RecoveryMilestoneState.Current -> LocalizationService.getString(language, "recovery_current")
-                                com.nitkotin.android.data.model.RecoveryMilestoneState.Upcoming -> LocalizationService.getString(language, "recovery_upcoming")
-                            },
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .testTag("main_screen_pager"),
+            ) { page ->
+                when (page) {
+                    MainTab.Products.index -> ProductsPage(
+                        language = language,
+                        productUpdatedAtText = state.productUpdatedAtText,
+                        productSuggestions = state.productSuggestions,
+                        onRefreshProducts = onRefreshProducts,
+                    )
+
+                    MainTab.Overview.index -> OverviewPage(
+                        state = state,
+                        showNotificationPermissionPrompt = showNotificationPermissionPrompt,
+                        onEnableNotifications = onEnableNotifications,
+                        onStartTracking = onStartTracking,
+                    )
+
+                    MainTab.Recovery.index -> RecoveryPage(
+                        language = language,
+                        recoveryMilestones = state.recoveryMilestones,
+                    )
                 }
             }
         }
@@ -269,79 +196,174 @@ fun MainScreen(
 }
 
 @Composable
-private fun ProductsSection(
+private fun OverviewPage(
+    state: MainUiState,
+    showNotificationPermissionPrompt: Boolean,
+    onEnableNotifications: () -> Unit,
+    onStartTracking: () -> Unit,
+) {
+    val language = state.language
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .testTag("overview_page")
+            .padding(16.dp),
+        contentPadding = PaddingValues(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        if (showNotificationPermissionPrompt) {
+            item {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(LocalizationService.getString(language, "notification_title"), style = MaterialTheme.typography.titleMedium)
+                            Text(LocalizationService.getString(language, "notification_channel_description"), style = MaterialTheme.typography.bodyMedium)
+                        }
+                        Button(onClick = onEnableNotifications) {
+                            Text(LocalizationService.getString(language, "enable_notifications"))
+                        }
+                    }
+                }
+            }
+        }
+        if (!state.hasStartedTracking) {
+            item {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(state.firstRunMessage, style = MaterialTheme.typography.bodyLarge)
+                        Button(onClick = onStartTracking) {
+                            Text(LocalizationService.getString(language, "quit_now"))
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            InfoCard(
+                title = LocalizationService.getString(language, "motivation_header"),
+                body = state.currentPhrase,
+                footer = LocalizationService.getString(language, "motivation_rotating"),
+            )
+        }
+        item {
+            InfoCard(
+                title = LocalizationService.getString(language, "saved_caption"),
+                body = state.savedAmountText,
+            )
+        }
+        item {
+            InfoCard(
+                title = LocalizationService.getString(language, "elapsed_caption"),
+                body = state.elapsedText,
+                footer = state.dashboardHint,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProductsPage(
     language: AppLanguage,
     productUpdatedAtText: String,
     productSuggestions: List<SuggestedProduct>,
-    isTabletLike: Boolean,
     onRefreshProducts: () -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (isTabletLike) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top,
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.weight(1f)) {
-                        Text(LocalizationService.getString(language, "products_header"), style = MaterialTheme.typography.titleMedium)
-                        Text(productUpdatedAtText, style = MaterialTheme.typography.labelMedium)
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Button(onClick = onRefreshProducts) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .testTag("products_page")
+            .padding(16.dp),
+        contentPadding = PaddingValues(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        item {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(LocalizationService.getString(language, "products_header"), style = MaterialTheme.typography.titleMedium)
+                    Text(productUpdatedAtText, style = MaterialTheme.typography.labelMedium)
+                    Button(onClick = onRefreshProducts, modifier = Modifier.align(Alignment.Start)) {
                         Icon(Icons.Rounded.Refresh, contentDescription = null)
                         Text(LocalizationService.getString(language, "products_refresh"), modifier = Modifier.padding(start = 8.dp))
                     }
                 }
-
-                if (productSuggestions.isEmpty()) {
-                    Text(LocalizationService.getString(language, "products_empty"))
-                } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        productSuggestions.chunked(2).forEach { rowProducts ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            ) {
-                                rowProducts.forEach { product ->
-                                    ProductSuggestionCard(
-                                        product = product,
-                                        language = language,
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                }
-                                if (rowProducts.size == 1) {
-                                    Spacer(modifier = Modifier.weight(1f))
-                                }
-                            }
-                        }
-                    }
+            }
+        }
+        if (productSuggestions.isEmpty()) {
+            item {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        LocalizationService.getString(language, "products_empty"),
+                        modifier = Modifier.padding(16.dp),
+                    )
                 }
-            } else {
-                Text(LocalizationService.getString(language, "products_header"), style = MaterialTheme.typography.titleMedium)
-                Text(productUpdatedAtText, style = MaterialTheme.typography.labelMedium)
-                Button(onClick = onRefreshProducts, modifier = Modifier.align(Alignment.Start)) {
-                    Icon(Icons.Rounded.Refresh, contentDescription = null)
-                    Text(LocalizationService.getString(language, "products_refresh"), modifier = Modifier.padding(start = 8.dp))
-                }
+            }
+        } else {
+            items(productSuggestions) { product ->
+                ProductSuggestionCard(
+                    product = product,
+                    language = language,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+    }
+}
 
-                if (productSuggestions.isEmpty()) {
-                    Text(LocalizationService.getString(language, "products_empty"))
-                } else {
-                    productSuggestions.forEachIndexed { index, product ->
-                        ProductSuggestionCard(
-                            product = product,
-                            language = language,
-                            modifier = Modifier.fillMaxWidth(),
-                            useInnerCard = false,
-                        )
-
-                        if (index < productSuggestions.lastIndex) {
-                            HorizontalDivider()
-                        }
-                    }
+@Composable
+private fun RecoveryPage(
+    language: AppLanguage,
+    recoveryMilestones: List<RecoveryMilestoneSnapshot>,
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .testTag("recovery_page")
+            .padding(16.dp),
+        contentPadding = PaddingValues(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        item {
+            Text(LocalizationService.getString(language, "recovery_header"), style = MaterialTheme.typography.titleMedium)
+        }
+        items(recoveryMilestones) { milestone ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(milestone.milestone.timeframeLabel, style = MaterialTheme.typography.labelLarge)
+                    Text(milestone.milestone.title, style = MaterialTheme.typography.titleMedium)
+                    Text(milestone.milestone.description, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        when (milestone.state) {
+                            RecoveryMilestoneState.Completed -> LocalizationService.getString(language, "recovery_completed")
+                            RecoveryMilestoneState.Current -> LocalizationService.getString(language, "recovery_current")
+                            RecoveryMilestoneState.Upcoming -> LocalizationService.getString(language, "recovery_upcoming")
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun InfoCard(
+    title: String,
+    body: String,
+    footer: String? = null,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(body, style = MaterialTheme.typography.bodyLarge)
+            if (!footer.isNullOrBlank()) {
+                Text(footer, style = MaterialTheme.typography.labelMedium)
             }
         }
     }
@@ -352,9 +374,8 @@ private fun ProductSuggestionCard(
     product: SuggestedProduct,
     language: AppLanguage,
     modifier: Modifier = Modifier,
-    useInnerCard: Boolean = true,
 ) {
-    val content: @Composable () -> Unit = {
+    Card(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(product.title, style = MaterialTheme.typography.titleMedium)
             Text("${product.priceUah.toInt()} ${LocalizationService.getString(language, "currency_major")}")
@@ -362,16 +383,68 @@ private fun ProductSuggestionCard(
             Text(product.shortDescription, style = MaterialTheme.typography.bodyMedium)
         }
     }
+}
 
-    if (useInnerCard) {
-        Card(modifier = modifier) {
-            content()
-        }
-    } else {
-        Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            content()
-        }
+@Composable
+private fun SettingsDialog(
+    state: MainUiState,
+    onDismiss: () -> Unit,
+    onSave: (Instant, Double, Double) -> Unit,
+) {
+    val context = LocalContext.current
+    val language = state.language
+    val formatter = remember {
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault())
     }
+    var tempQuitDateTime by remember(state.quitDateTime) { mutableStateOf(state.quitDateTime) }
+    var packsInput by remember(state.packsPerDay) { mutableStateOf(state.packsPerDay.toString()) }
+    var priceInput by remember(state.packPriceUah) { mutableStateOf(state.packPriceUah.toString()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(LocalizationService.getString(language, "settings_title")) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(
+                    onClick = {
+                        showDateTimePicker(context, tempQuitDateTime) {
+                            tempQuitDateTime = it
+                        }
+                    },
+                    modifier = Modifier.align(Alignment.Start),
+                ) {
+                    Icon(Icons.Rounded.CalendarMonth, contentDescription = null)
+                    Text(formatter.format(tempQuitDateTime), modifier = Modifier.padding(start = 8.dp))
+                }
+                OutlinedTextField(
+                    value = packsInput,
+                    onValueChange = { packsInput = it },
+                    label = { Text(LocalizationService.getString(language, "packs_per_day")) },
+                )
+                OutlinedTextField(
+                    value = priceInput,
+                    onValueChange = { priceInput = it },
+                    label = { Text(LocalizationService.getString(language, "pack_price")) },
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val packs = packsInput.toDoubleOrNull() ?: state.packsPerDay
+                    val price = priceInput.toDoubleOrNull() ?: state.packPriceUah
+                    onSave(tempQuitDateTime, packs, price)
+                },
+            ) {
+                Text(LocalizationService.getString(language, "settings_save"))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(LocalizationService.getString(language, "settings_cancel"))
+            }
+        },
+    )
 }
 
 private fun showDateTimePicker(
