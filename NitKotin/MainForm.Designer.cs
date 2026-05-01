@@ -31,6 +31,8 @@ partial class MainForm
     private void InitializeComponent()
     {
         headerPanel = new Panel();
+        languageEnglishButton = new Button();
+        languageUkrainianButton = new Button();
         subtitleLabel = new Label();
         titleLabel = new Label();
         motivationMarqueeLabel = new MarqueeLabel();
@@ -116,6 +118,8 @@ partial class MainForm
         // headerPanel
         // 
         headerPanel.BackColor = Color.FromArgb(28, 44, 54);
+        headerPanel.Controls.Add(languageEnglishButton);
+        headerPanel.Controls.Add(languageUkrainianButton);
         headerPanel.Controls.Add(subtitleLabel);
         headerPanel.Controls.Add(titleLabel);
         headerPanel.Dock = DockStyle.Top;
@@ -124,6 +128,38 @@ partial class MainForm
         headerPanel.Name = "headerPanel";
         headerPanel.Size = new Size(1280, 80);
         headerPanel.TabIndex = 0;
+        // 
+        // languageEnglishButton
+        // 
+        languageEnglishButton.BackColor = Color.FromArgb(28, 44, 54);
+        languageEnglishButton.FlatAppearance.BorderColor = Color.FromArgb(71, 85, 105);
+        languageEnglishButton.FlatAppearance.MouseDownBackColor = Color.FromArgb(44, 62, 75);
+        languageEnglishButton.FlatAppearance.MouseOverBackColor = Color.FromArgb(44, 62, 75);
+        languageEnglishButton.FlatStyle = FlatStyle.Flat;
+        languageEnglishButton.Location = new Point(1186, 19);
+        languageEnglishButton.Margin = new Padding(0);
+        languageEnglishButton.Name = "languageEnglishButton";
+        languageEnglishButton.Size = new Size(36, 24);
+        languageEnglishButton.TabIndex = 3;
+        languageEnglishButton.TabStop = false;
+        languageEnglishButton.UseVisualStyleBackColor = false;
+        languageEnglishButton.Click += languageEnglishButton_Click;
+        // 
+        // languageUkrainianButton
+        // 
+        languageUkrainianButton.BackColor = Color.FromArgb(28, 44, 54);
+        languageUkrainianButton.FlatAppearance.BorderColor = Color.FromArgb(71, 85, 105);
+        languageUkrainianButton.FlatAppearance.MouseDownBackColor = Color.FromArgb(44, 62, 75);
+        languageUkrainianButton.FlatAppearance.MouseOverBackColor = Color.FromArgb(44, 62, 75);
+        languageUkrainianButton.FlatStyle = FlatStyle.Flat;
+        languageUkrainianButton.Location = new Point(1230, 19);
+        languageUkrainianButton.Margin = new Padding(0);
+        languageUkrainianButton.Name = "languageUkrainianButton";
+        languageUkrainianButton.Size = new Size(36, 24);
+        languageUkrainianButton.TabIndex = 2;
+        languageUkrainianButton.TabStop = false;
+        languageUkrainianButton.UseVisualStyleBackColor = false;
+        languageUkrainianButton.Click += languageUkrainianButton_Click;
         // 
         // subtitleLabel
         // 
@@ -957,6 +993,8 @@ partial class MainForm
     #endregion
 
     private Panel headerPanel;
+    private Button languageEnglishButton;
+    private Button languageUkrainianButton;
     private Label titleLabel;
     private Label subtitleLabel;
     private MarqueeLabel motivationMarqueeLabel;

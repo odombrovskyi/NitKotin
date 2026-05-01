@@ -15,10 +15,13 @@ public partial class MainForm : Form
     private readonly ToolStripMenuItem _toggleMainWindowMenuItem;
     private readonly ToolStripMenuItem _toggleOverlayMenuItem;
     private readonly MotivationalPhraseService _motivationalPhraseService;
-    private readonly ProductSuggestionService _productSuggestionService;
+    private readonly ProductCatalogService _productCatalogService;
+    private ProductSuggestionService _productSuggestionService;
     private readonly RecoveryTimelineService _recoveryTimelineService;
     private readonly System.Windows.Forms.Timer _productsRefreshTimer;
     private readonly System.Windows.Forms.Timer _refreshTimer;
+    private readonly Image? _englishFlagImage;
+    private readonly Image? _ukrainianFlagImage;
     private decimal _animatedSavedAmount;
     private bool _isInitializing;
     private bool _isExiting;
@@ -26,23 +29,27 @@ public partial class MainForm : Form
     private DateTime _lastProductsRefreshLocal;
     private DateTime _lastProductsRefreshRequestUtc = DateTime.MinValue;
     private SmokingConfig _config;
+    private string _currentLanguage = LocalizationService.English;
     private decimal _targetSavedAmount;
 
     public MainForm()
     {
         _configService = new ConfigService();
-        _isAwaitingFirstQuitConfirmation = !File.Exists(_configService.ConfigPath);
-        var catalogService = new ProductCatalogService();
+        _productCatalogService = new ProductCatalogService();
         _motivationalPhraseService = new MotivationalPhraseService();
         _recoveryTimelineService = new RecoveryTimelineService();
         _config = _configService.Load();
+        _currentLanguage = LocalizationService.NormalizeLanguage(_config.LanguagePreference);
+        _isAwaitingFirstQuitConfirmation = !_config.HasStartedTracking;
         _autoSaveTimer = new System.Windows.Forms.Timer();
         _marqueeTimer = new System.Windows.Forms.Timer();
         _productsRefreshTimer = new System.Windows.Forms.Timer();
-        _productSuggestionService = new ProductSuggestionService(catalogService.LoadCatalog());
+        _productSuggestionService = new ProductSuggestionService(_productCatalogService.LoadCatalog(_currentLanguage));
         _refreshTimer = new System.Windows.Forms.Timer();
 
         InitializeComponent();
+        _englishFlagImage = LoadFlagImage("flag-us.png");
+        _ukrainianFlagImage = LoadFlagImage("flag-ua.png");
         UpdateQuitDateInputMode();
         _appIcon = LoadAppIcon();
         Icon = _appIcon;
@@ -57,7 +64,7 @@ public partial class MainForm : Form
         _toggleOverlayMenuItem.Click += ToggleOverlayMenuItem_Click;
         _toggleMainWindowMenuItem = new ToolStripMenuItem();
         _toggleMainWindowMenuItem.Click += ToggleMainWindowMenuItem_Click;
-        var exitMenuItem = new ToolStripMenuItem("Вихід");
+        var exitMenuItem = new ToolStripMenuItem(T("TrayExit"));
         exitMenuItem.Click += ExitMenuItem_Click;
         trayMenu.Items.AddRange([_toggleOverlayMenuItem, _toggleMainWindowMenuItem, new ToolStripSeparator(), exitMenuItem]);
 
@@ -65,7 +72,7 @@ public partial class MainForm : Form
         {
             ContextMenuStrip = trayMenu,
             Icon = _appIcon,
-            Text = "Ні! котину мотиватор",
+            Text = T("AppTitle"),
             Visible = false
         };
         _trayIcon.DoubleClick += TrayIcon_DoubleClick;
@@ -101,17 +108,18 @@ public partial class MainForm : Form
         packPriceNumericUpDown.Value = ClampDecimal(_config.PackPriceUah, packPriceNumericUpDown.Minimum, packPriceNumericUpDown.Maximum);
         _isInitializing = false;
         UpdateQuitDateInputMode();
+        ApplyLocalizedStaticTexts();
 
         statusLabel.Text = _isAwaitingFirstQuitConfirmation
-            ? $"Натисни \"Я кинув палити!\", щоб почати відлік. Конфіг буде збережено в: {_configService.ConfigPath}"
+            ? F("ConfigStatusFirstRun", _configService.ConfigPath)
             : File.Exists(_configService.ConfigPath)
-                ? $"Конфіг завантажено: {_configService.ConfigPath}"
-                : $"Конфіг буде збережено в: {_configService.ConfigPath}";
+                ? F("ConfigStatusLoaded", _configService.ConfigPath)
+                : F("ConfigStatusWillBeSaved", _configService.ConfigPath);
 
         ConfigureMotivationMarquee();
         UpdateSavingsDisplay();
         UpdateOverlayDisplay();
-        RefreshProductSuggestions(forceRefresh: true, reason: "Підібрано товари з локального каталогу.");
+        RefreshProductSuggestions(forceRefresh: true, reason: T("StatusProductsLoaded"));
         _overlayForm.Show();
         _trayIcon.Visible = true;
         UpdateTrayMenuLabels();
@@ -140,6 +148,8 @@ public partial class MainForm : Form
         _refreshTimer.Stop();
         _trayIcon.Dispose();
         _appIcon.Dispose();
+        _englishFlagImage?.Dispose();
+        _ukrainianFlagImage?.Dispose();
     }
 
     private void MainForm_Shown(object? sender, EventArgs e)
@@ -155,6 +165,18 @@ public partial class MainForm : Form
             : SystemIcons.Application;
     }
 
+    private static Image? LoadFlagImage(string fileName)
+    {
+        var imagePath = Path.Combine(AppContext.BaseDirectory, "Assets", fileName);
+        if (!File.Exists(imagePath))
+        {
+            return null;
+        }
+
+        using var source = Image.FromFile(imagePath);
+        return new Bitmap(source);
+    }
+
     private void quitSmokingNowButton_Click(object? sender, EventArgs e)
     {
         _autoSaveTimer.Stop();
@@ -163,8 +185,18 @@ public partial class MainForm : Form
         _isInitializing = false;
         _isAwaitingFirstQuitConfirmation = false;
         UpdateQuitDateInputMode();
-        SaveCurrentConfig("Початок відліку збережено");
+        SaveCurrentConfig(T("StatusQuitStartedSaved"));
         UpdateOverlayDisplay();
+    }
+
+    private void languageEnglishButton_Click(object? sender, EventArgs e)
+    {
+        SetLanguage(LocalizationService.English);
+    }
+
+    private void languageUkrainianButton_Click(object? sender, EventArgs e)
+    {
+        SetLanguage(LocalizationService.Ukrainian);
     }
 
     private void Input_ValueChanged(object? sender, EventArgs e)
@@ -176,14 +208,14 @@ public partial class MainForm : Form
 
         if (_isAwaitingFirstQuitConfirmation)
         {
-            statusLabel.Text = "Налаштування підготовлено. Натисни \"Я кинув палити!\", щоб почати відлік і зберегти конфіг.";
+            statusLabel.Text = T("StatusPendingFirstRun");
             UpdateSavingsDisplay(forceRefreshDependentViews: true);
             UpdateAnimatedAmountDisplay();
             UpdateOverlayDisplay();
             return;
         }
 
-        statusLabel.Text = "Виявлено зміни. Автозбереження...";
+        statusLabel.Text = T("StatusChangesDetected");
         UpdateSavingsDisplay(forceRefreshDependentViews: true);
         UpdateAnimatedAmountDisplay();
         UpdateOverlayDisplay();
@@ -194,14 +226,14 @@ public partial class MainForm : Form
     private void AutoSaveTimer_Tick(object? sender, EventArgs e)
     {
         _autoSaveTimer.Stop();
-        SaveCurrentConfig("Автозбережено");
+        SaveCurrentConfig(T("StatusAutoSaved"));
     }
 
     private void SaveCurrentConfig(string statusPrefix)
     {
         if (_isAwaitingFirstQuitConfirmation)
         {
-            statusLabel.Text = "Спочатку натисни \"Я кинув палити!\", щоб зафіксувати час відмови.";
+            statusLabel.Text = T("StatusNeedFirstRunButton");
             UpdateSavingsDisplay();
             return;
         }
@@ -211,16 +243,16 @@ public partial class MainForm : Form
         try
         {
             _configService.Save(_config);
-            statusLabel.Text = $"{statusPrefix}: {_configService.ConfigPath}";
+            statusLabel.Text = F("StatusSavedFormat", statusPrefix, _configService.ConfigPath);
             UpdateSavingsDisplay();
         }
         catch (IOException ex)
         {
-            statusLabel.Text = $"Помилка збереження: {ex.Message}";
+            statusLabel.Text = F("StatusSaveError", ex.Message);
         }
         catch (UnauthorizedAccessException ex)
         {
-            statusLabel.Text = $"Немає доступу до конфігу: {ex.Message}";
+            statusLabel.Text = F("StatusAccessError", ex.Message);
         }
     }
 
@@ -238,19 +270,19 @@ public partial class MainForm : Form
 
     private void ProductsRefreshTimer_Tick(object? sender, EventArgs e)
     {
-        RefreshProductSuggestions(forceRefresh: true, reason: "Добірку товарів оновлено автоматично.");
+        RefreshProductSuggestions(forceRefresh: true, reason: T("StatusProductsAutoRefreshed"));
     }
 
     private void refreshProductsButton_Click(object? sender, EventArgs e)
     {
         if (DateTime.UtcNow - _lastProductsRefreshRequestUtc < TimeSpan.FromSeconds(3))
         {
-            statusLabel.Text = "Оновлення товарів щойно запускалося. Спробуй ще за кілька секунд.";
+            statusLabel.Text = T("StatusProductsTooSoon");
             return;
         }
 
         _lastProductsRefreshRequestUtc = DateTime.UtcNow;
-        RefreshProductSuggestions(forceRefresh: true, reason: "Добірку товарів оновлено вручну.");
+        RefreshProductSuggestions(forceRefresh: true, reason: T("StatusProductsManualRefreshed"));
     }
 
     private void UpdateSavingsDisplay(bool forceRefreshDependentViews = false)
@@ -259,10 +291,10 @@ public partial class MainForm : Form
         {
             _targetSavedAmount = 0m;
             _animatedSavedAmount = 0m;
-            savedAmountLabel.Text = SavingsCalculator.FormatCurrency(0m);
-            elapsedValueLabel.Text = "Відлік ще не почався";
-            hintLabel.Text = "Натисни \"Я кинув палити!\", щоб зафіксувати поточний час і почати відлік.";
-            recoveryTimelineLegendLabel.Text = "Етапи відновлення з'являться після натискання кнопки старту.";
+            savedAmountLabel.Text = SavingsCalculator.FormatCurrency(0m, _currentLanguage);
+            elapsedValueLabel.Text = T("ElapsedNotStarted");
+            hintLabel.Text = T("HintFirstRun");
+            recoveryTimelineLegendLabel.Text = T("RecoveryLegendFirstRun");
             HideRecoveryTimelineCards();
             RefreshProductSuggestions(forceRefresh: forceRefreshDependentViews, reason: null);
             return;
@@ -277,20 +309,20 @@ public partial class MainForm : Form
 
         var now = DateTime.Now;
         _targetSavedAmount = SavingsCalculator.CalculateSavedAmount(liveConfig, now);
-        elapsedValueLabel.Text = SavingsCalculator.FormatElapsed(liveConfig.QuitDateTime, now);
+        elapsedValueLabel.Text = SavingsCalculator.FormatElapsed(liveConfig.QuitDateTime, now, _currentLanguage);
         UpdateRecoveryTimeline(liveConfig.QuitDateTime, now);
 
         if (liveConfig.QuitDateTime > now)
         {
-            hintLabel.Text = "Вказано майбутню дату. Економія почне рахуватися після цього моменту.";
+            hintLabel.Text = T("HintFutureDate");
         }
         else if (liveConfig.PacksPerDay <= 0 || liveConfig.PackPriceUah <= 0)
         {
-            hintLabel.Text = "Щоб побачити суму, вкажіть кількість пачок і ціну більше нуля.";
+            hintLabel.Text = T("HintNeedPositiveValues");
         }
         else
         {
-            hintLabel.Text = "Сума оновлюється автоматично в реальному часі.";
+            hintLabel.Text = T("HintRealtime");
         }
 
         RefreshProductSuggestions(forceRefresh: forceRefreshDependentViews, reason: null);
@@ -316,7 +348,7 @@ public partial class MainForm : Form
             }
         }
 
-        savedAmountLabel.Text = SavingsCalculator.FormatCurrency(_animatedSavedAmount);
+        savedAmountLabel.Text = SavingsCalculator.FormatCurrency(_animatedSavedAmount, _currentLanguage);
     }
 
     private void UpdateOverlayDisplay()
@@ -328,13 +360,13 @@ public partial class MainForm : Form
 
         if (_isAwaitingFirstQuitConfirmation)
         {
-            _overlayForm.UpdateValues(FormatOverlaySavings(0m), FormatOverlayHours(0));
+            _overlayForm.UpdateValues(FormatOverlaySavings(0m, _currentLanguage), FormatOverlayHours(0, _currentLanguage));
             UpdateTrayMenuLabels();
             return;
         }
 
         var smokeFreeHours = GetSmokeFreeHours(quitDateTimePicker.Value, DateTime.Now);
-        _overlayForm.UpdateValues(FormatOverlaySavings(_animatedSavedAmount), FormatOverlayHours(smokeFreeHours));
+        _overlayForm.UpdateValues(FormatOverlaySavings(_animatedSavedAmount, _currentLanguage), FormatOverlayHours(smokeFreeHours, _currentLanguage));
         UpdateTrayMenuLabels();
     }
 
@@ -356,9 +388,9 @@ public partial class MainForm : Form
         var suggestions = _productSuggestionService.GetSuggestions(_targetSavedAmount);
         if (suggestions.Count == 0)
         {
-            ApplySuggestionToCard(product1TitleLabel, product1PriceLabel, product1DescriptionLabel, "Каталог недоступний", "", "Не вдалося завантажити локальні товари.");
-            ApplySuggestionToCard(product2TitleLabel, product2PriceLabel, product2DescriptionLabel, "Спробуй пізніше", "", "Перевір JSON-каталог у директорії застосунку.");
-            ApplySuggestionToCard(product3TitleLabel, product3PriceLabel, product3DescriptionLabel, "Поки без добірки", "", "Основний лічильник працює, але каталог порожній.");
+            ApplySuggestionToCard(product1TitleLabel, product1PriceLabel, product1DescriptionLabel, T("CatalogUnavailableTitle"), string.Empty, T("CatalogUnavailableDescription"));
+            ApplySuggestionToCard(product2TitleLabel, product2PriceLabel, product2DescriptionLabel, T("CatalogTryLaterTitle"), string.Empty, T("CatalogTryLaterDescription"));
+            ApplySuggestionToCard(product3TitleLabel, product3PriceLabel, product3DescriptionLabel, T("CatalogEmptyTitle"), string.Empty, T("CatalogEmptyDescription"));
             return;
         }
 
@@ -367,10 +399,10 @@ public partial class MainForm : Form
         var paddedSuggestions = suggestions
             .Concat(Enumerable.Repeat(new SuggestedProduct
             {
-                Title = "Ще трохи і буде нова ціль",
+                Title = T("CatalogGoalTitle"),
                 PriceUah = 0m,
-                Category = "Мотивація",
-                ShortDescription = "Коли сума підросте, каталог покаже ширший вибір."
+                Category = T("CatalogGoalCategory"),
+                ShortDescription = T("CatalogGoalDescription")
             }, 3))
             .Take(3)
             .ToArray();
@@ -391,11 +423,11 @@ public partial class MainForm : Form
     {
         if (_lastProductsRefreshLocal == default)
         {
-            productsUpdatedLabel.Text = "Оновлення: ще не виконувалось";
+            productsUpdatedLabel.Text = T("ProductsNeverUpdated");
             return;
         }
 
-        productsUpdatedLabel.Text = $"Оновлено о {_lastProductsRefreshLocal:HH:mm}";
+        productsUpdatedLabel.Text = F("ProductsUpdatedAtFormat", _lastProductsRefreshLocal);
     }
 
     private static void ApplySuggestionToCard(Label titleLabel, Label priceLabel, Label descriptionLabel, string title, string price, string description)
@@ -405,9 +437,9 @@ public partial class MainForm : Form
         descriptionLabel.Text = description;
     }
 
-    private static string FormatProductPrice(decimal priceUah)
+    private string FormatProductPrice(decimal priceUah)
     {
-        return priceUah <= 0m ? "" : $"{priceUah:0} грн";
+        return priceUah <= 0m ? string.Empty : $"{priceUah:0} {T("CurrencyMajor")}";
     }
 
     private static string BuildProductDescription(SuggestedProduct product)
@@ -458,6 +490,8 @@ public partial class MainForm : Form
 
         return new SmokingConfig
         {
+            LanguagePreference = _currentLanguage,
+            HasStartedTracking = !_isAwaitingFirstQuitConfirmation,
             QuitDateTime = quitDateTimePicker.Value,
             PacksPerDay = packsPerDayNumericUpDown.Value,
             PackPriceUah = packPriceNumericUpDown.Value,
@@ -476,15 +510,15 @@ public partial class MainForm : Form
         return Math.Max(0, (int)(currentTime - quitDateTime).TotalHours);
     }
 
-    private static string FormatOverlaySavings(decimal amount)
+    private static string FormatOverlaySavings(decimal amount, string languageCode)
     {
         var roundedAmount = decimal.Round(amount, 0, MidpointRounding.AwayFromZero);
-        return $"{roundedAmount:0} грн";
+        return $"{roundedAmount:0} {LocalizationService.GetString(languageCode, "CurrencyMajor")}";
     }
 
-    private static string FormatOverlayHours(int smokeFreeHours)
+    private static string FormatOverlayHours(int smokeFreeHours, string languageCode)
     {
-        return $"{smokeFreeHours:0} год";
+        return $"{smokeFreeHours:0} {LocalizationService.GetString(languageCode, "OverlayHours")}";
     }
 
     private void PersistOverlayPosition()
@@ -615,29 +649,29 @@ public partial class MainForm : Form
     private void UpdateTrayMenuLabels()
     {
         _toggleOverlayMenuItem.Text = _overlayForm.Visible
-            ? "Сховати оверлей"
-            : "Показати оверлей";
+            ? T("TrayHideOverlay")
+            : T("TrayShowOverlay");
 
         var isMainVisible = Visible && WindowState != FormWindowState.Minimized;
         _toggleMainWindowMenuItem.Text = isMainVisible
-            ? "Сховати основне вікно"
-            : "Показати основне вікно";
+            ? T("TrayHideMainWindow")
+            : T("TrayShowMainWindow");
     }
 
     private void ConfigureMotivationMarquee()
     {
-        var phrases = _motivationalPhraseService.LoadPhrases();
+        var phrases = _motivationalPhraseService.LoadPhrases(_currentLanguage);
         var text = string.Join("   •   ", phrases.Select(phrase => phrase.Text.Trim()).Where(text => !string.IsNullOrWhiteSpace(text)));
 
         motivationMarqueeLabel.MarqueeText = string.IsNullOrWhiteSpace(text)
-            ? "Ти вже робиш щось важливе для себе."
+            ? T("MotivationFallback")
             : text;
     }
 
     private void UpdateRecoveryTimeline(DateTime quitDateTime, DateTime now)
     {
-        recoveryTimelineLegendLabel.Text = "Зелене — уже позаду, помаранчеве — твій поточний етап, нейтральне — наступні зміни.";
-        var snapshots = _recoveryTimelineService.GetVisibleMilestones(now - quitDateTime, 5);
+        recoveryTimelineLegendLabel.Text = T("RecoveryLegend");
+        var snapshots = _recoveryTimelineService.GetVisibleMilestones(now - quitDateTime, 5, _currentLanguage);
         var cards = new[]
         {
             (recoveryCardPanel1, recoveryStateLabel1, recoveryTimeLabel1, recoveryTitleLabel1, recoveryDescriptionLabel1),
@@ -674,7 +708,7 @@ public partial class MainForm : Form
         recoveryCardPanel5.Visible = false;
     }
 
-    private static void ApplyRecoveryCard(
+    private void ApplyRecoveryCard(
         Panel panel,
         Label stateLabel,
         Label timeLabel,
@@ -693,7 +727,7 @@ public partial class MainForm : Form
                 panel.BackColor = Color.FromArgb(236, 253, 245);
                 stateLabel.BackColor = Color.FromArgb(22, 163, 74);
                 stateLabel.ForeColor = Color.White;
-                stateLabel.Text = "Вже пройдено";
+                stateLabel.Text = T("RecoveryStateCompleted");
                 timeLabel.ForeColor = Color.FromArgb(21, 128, 61);
                 titleLabel.ForeColor = Color.FromArgb(20, 83, 45);
                 descriptionLabel.ForeColor = Color.FromArgb(63, 98, 18);
@@ -703,7 +737,7 @@ public partial class MainForm : Form
                 panel.BackColor = Color.FromArgb(255, 247, 237);
                 stateLabel.BackColor = Color.FromArgb(234, 88, 12);
                 stateLabel.ForeColor = Color.White;
-                stateLabel.Text = "Поточний етап";
+                stateLabel.Text = T("RecoveryStateCurrent");
                 timeLabel.ForeColor = Color.FromArgb(194, 65, 12);
                 titleLabel.ForeColor = Color.FromArgb(124, 45, 18);
                 descriptionLabel.ForeColor = Color.FromArgb(154, 52, 18);
@@ -713,11 +747,98 @@ public partial class MainForm : Form
                 panel.BackColor = Color.FromArgb(248, 250, 252);
                 stateLabel.BackColor = Color.FromArgb(226, 232, 240);
                 stateLabel.ForeColor = Color.FromArgb(71, 85, 105);
-                stateLabel.Text = "Попереду";
+                stateLabel.Text = T("RecoveryStateUpcoming");
                 timeLabel.ForeColor = Color.FromArgb(71, 85, 105);
                 titleLabel.ForeColor = Color.FromArgb(15, 23, 42);
                 descriptionLabel.ForeColor = Color.FromArgb(71, 85, 105);
                 break;
         }
+    }
+
+    private void ApplyLocalizedStaticTexts()
+    {
+        Text = T("AppTitle");
+        _trayIcon.Text = T("AppTitle");
+        titleLabel.Text = T("AppTitle");
+        motivationMarqueeLabel.MarqueeText = T("MotivationLoading");
+        quitDateLabel.Text = T("QuitDateLabel");
+        packsPerDayLabel.Text = T("PacksPerDayLabel");
+        packPriceLabel.Text = T("PackPriceLabel");
+        autosaveLabel.Text = T("AutosaveLabel");
+        quitSmokingNowButton.Text = T("QuitNowButton");
+        savedCaptionLabel.Text = T("SavedCaption");
+        elapsedCaptionLabel.Text = T("SmokeFreeCaption");
+        productsHeaderLabel.Text = T("ProductsHeader");
+        refreshProductsButton.Text = T("ProductsRefreshButton");
+        recoveryTimelineHeaderLabel.Text = T("RecoveryHeader");
+        languageEnglishButton.BackgroundImage = _englishFlagImage;
+        languageEnglishButton.BackgroundImageLayout = ImageLayout.Zoom;
+        languageEnglishButton.Text = string.Empty;
+        languageUkrainianButton.BackgroundImage = _ukrainianFlagImage;
+        languageUkrainianButton.BackgroundImageLayout = ImageLayout.Zoom;
+        languageUkrainianButton.Text = string.Empty;
+        UpdateLanguageButtonStyles();
+    }
+
+    private void SetLanguage(string languageCode)
+    {
+        var normalizedLanguage = LocalizationService.NormalizeLanguage(languageCode);
+        if (_currentLanguage == normalizedLanguage)
+        {
+            UpdateLanguageButtonStyles();
+            return;
+        }
+
+        _currentLanguage = normalizedLanguage;
+        _productSuggestionService = new ProductSuggestionService(_productCatalogService.LoadCatalog(_currentLanguage));
+        ApplyLocalizedStaticTexts();
+        statusLabel.Text = _isAwaitingFirstQuitConfirmation
+            ? F("ConfigStatusFirstRun", _configService.ConfigPath)
+            : F("ConfigStatusLoaded", _configService.ConfigPath);
+        ConfigureMotivationMarquee();
+        UpdateSavingsDisplay(forceRefreshDependentViews: true);
+        UpdateAnimatedAmountDisplay();
+        UpdateOverlayDisplay();
+        UpdateTrayMenuLabels();
+        PersistLanguagePreference();
+    }
+
+    private void PersistLanguagePreference()
+    {
+        try
+        {
+            _config = BuildCurrentConfig();
+            _configService.Save(_config);
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+    }
+
+    private void UpdateLanguageButtonStyles()
+    {
+        ApplyLanguageButtonStyle(languageEnglishButton, _currentLanguage == LocalizationService.English);
+        ApplyLanguageButtonStyle(languageUkrainianButton, _currentLanguage == LocalizationService.Ukrainian);
+    }
+
+    private static void ApplyLanguageButtonStyle(Button button, bool isSelected)
+    {
+        button.FlatAppearance.BorderSize = isSelected ? 2 : 1;
+        button.FlatAppearance.BorderColor = isSelected
+            ? Color.FromArgb(251, 191, 36)
+            : Color.FromArgb(71, 85, 105);
+    }
+
+    private string T(string key)
+    {
+        return LocalizationService.GetString(_currentLanguage, key);
+    }
+
+    private string F(string key, params object[] args)
+    {
+        return LocalizationService.Format(_currentLanguage, key, args);
     }
 }

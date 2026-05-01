@@ -33,20 +33,22 @@ dotnet build .\NitKotin\NitKotin.csproj -c Release
 5. Build the installer in `Release`:
 
 ```powershell
-dotnet build .\NitKotin.Installer\NitKotin.Installer.wixproj -c Release
+dotnet build .\NitKotin.Installer\NitKotin.Installer.wixproj -c Release -p:InstallerLanguage=en
+dotnet build .\NitKotin.Installer\NitKotin.Installer.wixproj -c Release -p:InstallerLanguage=uk
 ```
 
 6. Confirm the new artifact exists at:
 
 ```text
-NitKotin.Installer\bin\x64\Release\NitKotin-<version>-x64.msi
+NitKotin.Installer\bin\x64\Release\NitKotin-en-<version>-x64.msi
+NitKotin.Installer\bin\x64\Release\NitKotin-uk-<version>-x64.msi
 ```
 
 ## Expected Result
 
-- The app and MSI both use the same version from `Directory.Build.props`.
-- The installer output is fresh and built after a clean.
-- The MSI is ready to upload to a GitHub Release.
+- The app and both MSI variants use the same version from `Directory.Build.props`.
+- The installer outputs are fresh and built after a clean.
+- Both MSI files are ready to upload to a GitHub Release.
 
 ## Notes
 

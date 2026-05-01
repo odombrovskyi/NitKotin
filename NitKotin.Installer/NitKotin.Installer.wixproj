@@ -4,9 +4,19 @@
     <OutputType>Package</OutputType>
     <Platform>x64</Platform>
     <InstallerPlatform>x64</InstallerPlatform>
-    <OutputName>NitKotin-$(Version)-x64</OutputName>
+    <InstallerLanguage Condition="'$(InstallerLanguage)' == ''">en</InstallerLanguage>
+    <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\$(InstallerLanguage)\</IntermediateOutputPath>
+    <InstallerLcid Condition="'$(InstallerLanguage)' == 'uk'">1058</InstallerLcid>
+    <InstallerLcid Condition="'$(InstallerLanguage)' != 'uk'">1033</InstallerLcid>
+    <InstallerLaunchCheckboxText Condition="'$(InstallerLanguage)' == 'uk'">Запустити NitKotin після завершення інсталяції</InstallerLaunchCheckboxText>
+    <InstallerLaunchCheckboxText Condition="'$(InstallerLanguage)' != 'uk'">Launch NitKotin after setup finishes</InstallerLaunchCheckboxText>
+    <InstallerShortcutDescription Condition="'$(InstallerLanguage)' == 'uk'">Ні! котину мотиватор</InstallerShortcutDescription>
+    <InstallerShortcutDescription Condition="'$(InstallerLanguage)' != 'uk'">Quit smoking motivator</InstallerShortcutDescription>
+    <InstallerDowngradeError Condition="'$(InstallerLanguage)' == 'uk'">Новіша версія NitKotin уже встановлена.</InstallerDowngradeError>
+    <InstallerDowngradeError Condition="'$(InstallerLanguage)' != 'uk'">A newer version of NitKotin is already installed.</InstallerDowngradeError>
+    <OutputName>NitKotin-$(InstallerLanguage)-$(Version)-x64</OutputName>
     <PublishDir>$(MSBuildThisFileDirectory)artifacts\publish\</PublishDir>
-    <DefineConstants>$(DefineConstants);PublishDir=$(PublishDir);NitKotinVersion=$(Version);NitKotinManufacturer=$(Company);NitKotinProductName=$(Product);NitKotinDescription=$(Description)</DefineConstants>
+    <DefineConstants>$(DefineConstants);PublishDir=$(PublishDir);NitKotinVersion=$(Version);NitKotinManufacturer=$(Company);NitKotinProductName=$(Product);NitKotinDescription=$(Description);InstallerLanguage=$(InstallerLanguage);InstallerLcid=$(InstallerLcid);InstallerLaunchCheckboxText=$(InstallerLaunchCheckboxText);InstallerShortcutDescription=$(InstallerShortcutDescription);InstallerDowngradeError=$(InstallerDowngradeError)</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

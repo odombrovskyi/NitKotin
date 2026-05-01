@@ -5,23 +5,19 @@ namespace NitKotin.Services;
 
 public sealed class ProductCatalogService
 {
-    private readonly string _catalogPath;
-
-    public ProductCatalogService(string? catalogPath = null)
+    public IReadOnlyList<CatalogProduct> LoadCatalog(string languageCode)
     {
-        _catalogPath = catalogPath ?? Path.Combine(AppContext.BaseDirectory, "Data", "product-catalog.ua.json");
-    }
+        var normalizedLanguage = LocalizationService.NormalizeLanguage(languageCode);
+        var catalogPath = Path.Combine(AppContext.BaseDirectory, "Data", GetCatalogFileName(normalizedLanguage));
 
-    public IReadOnlyList<CatalogProduct> LoadCatalog()
-    {
-        if (!File.Exists(_catalogPath))
+        if (!File.Exists(catalogPath))
         {
             return Array.Empty<CatalogProduct>();
         }
 
         try
         {
-            var json = File.ReadAllText(_catalogPath);
+            var json = File.ReadAllText(catalogPath);
             var products = JsonSerializer.Deserialize<List<CatalogProduct>>(json);
             return products?
                 .Where(product => !string.IsNullOrWhiteSpace(product.Id)
@@ -38,5 +34,12 @@ public sealed class ProductCatalogService
         {
             return Array.Empty<CatalogProduct>();
         }
+    }
+
+    private static string GetCatalogFileName(string languageCode)
+    {
+        return languageCode == LocalizationService.Ukrainian
+            ? "product-catalog.ua.json"
+            : "product-catalog.en.json";
     }
 }

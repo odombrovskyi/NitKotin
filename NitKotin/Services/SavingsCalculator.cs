@@ -22,7 +22,7 @@ public static class SavingsCalculator
         return decimal.Round(savedAmount, 2, MidpointRounding.AwayFromZero);
     }
 
-    public static string FormatCurrency(decimal amount)
+    public static string FormatCurrency(decimal amount, string languageCode)
     {
         var hryvnias = decimal.Truncate(amount);
         var kopecks = decimal.Round((amount - hryvnias) * 100m, 0, MidpointRounding.AwayFromZero);
@@ -33,17 +33,17 @@ public static class SavingsCalculator
             kopecks = 0m;
         }
 
-        return $"{hryvnias:0} грн {kopecks:00} коп";
+        return $"{hryvnias:0} {LocalizationService.GetString(languageCode, "CurrencyMajor")} {kopecks:00} {LocalizationService.GetString(languageCode, "CurrencyMinor")}";
     }
 
-    public static string FormatElapsed(DateTime quitDateTime, DateTime currentTime)
+    public static string FormatElapsed(DateTime quitDateTime, DateTime currentTime, string languageCode)
     {
         if (quitDateTime >= currentTime)
         {
-            return "Відмова ще не почалася";
+            return LocalizationService.GetString(languageCode, "ElapsedNotStartedShort");
         }
 
         var elapsed = currentTime - quitDateTime;
-        return $"{elapsed.Days} дн. {elapsed.Hours:00} год. {elapsed.Minutes:00} хв. {elapsed.Seconds:00} сек.";
+        return $"{elapsed.Days} {LocalizationService.GetString(languageCode, "ElapsedDays")} {elapsed.Hours:00} {LocalizationService.GetString(languageCode, "ElapsedHours")} {elapsed.Minutes:00} {LocalizationService.GetString(languageCode, "ElapsedMinutes")} {elapsed.Seconds:00} {LocalizationService.GetString(languageCode, "ElapsedSeconds")}";
     }
 }

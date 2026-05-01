@@ -2,11 +2,13 @@
 
 Невеликий мотиваційний WinForms-застосунок на C#/.NET 8.
 
+Застосунок підтримує дві мови інтерфейсу: English і українську. За замовчуванням використовується English, а перемикач мови у вигляді прапорів США та України розташований праворуч у хедері. Обрана мова зберігається в конфігурацію і використовується при наступному запуску.
+
 ## Встановлення
 
 Для звичайного встановлення використовуй MSI-інсталятор із GitHub Releases.
 
-- завантаж `NitKotin-<версія>-x64.msi` зі сторінки релізу;
+- завантаж `NitKotin-en-<версія>-x64.msi` або `NitKotin-uk-<версія>-x64.msi` зі сторінки релізу;
 - переконайся, що на Windows встановлено `.NET 8 Desktop Runtime`, бо інсталятор збирається як framework-dependent;
 - запусти MSI без прав адміністратора і встанови застосунок у профіль поточного користувача;
 - після інсталяції застосунок буде доступний через меню Start і через ярлик на робочому столі.
@@ -33,7 +35,8 @@
 - показує 3 товари з локального каталогу, які можна купити на поточну суму;
 - показує нижній таймлайн змін в організмі після відмови від куріння: що вже пройдено, що актуально зараз і що далі;
 - оновлює добірку товарів вручну і кожні 30 хвилин;
-- оновлює суму в реальному часі після запуску.
+- оновлює суму в реальному часі після запуску;
+- дозволяє миттєво перемикати мову інтерфейсу між English і українською.
 
 ## Трей і оверлей
 
@@ -68,19 +71,22 @@ dotnet run --project .\NitKotin\NitKotin.csproj
 4. зібрати `NitKotin` у `Release`;
 5. зібрати `NitKotin.Installer` у `Release`;
 6. створити Git tag і GitHub Release з таким самим номером версії;
-7. прикріпити MSI `NitKotin-<версія>-x64.msi` до релізу.
+7. прикріпити MSI `NitKotin-en-<версія>-x64.msi` і `NitKotin-uk-<версія>-x64.msi` до релізу.
 
 ## Збірка MSI
 
 ```powershell
-dotnet build .\NitKotin.Installer\NitKotin.Installer.wixproj -c Release
+dotnet build .\NitKotin.Installer\NitKotin.Installer.wixproj -c Release -p:InstallerLanguage=en
+dotnet build .\NitKotin.Installer\NitKotin.Installer.wixproj -c Release -p:InstallerLanguage=uk
 ```
 
 Під час збірки installer-проєкт сам виконує `dotnet publish` для WinForms-застосунку в framework-dependent режимі, а потім пакує опубліковані файли в MSI.
 
-Готовий інсталятор з'являється в:
+Готові інсталятори з'являються в:
 
-`NitKotin.Installer\bin\x64\Release\NitKotin-<версія>-x64.msi`
+`NitKotin.Installer\bin\x64\Release\NitKotin-en-<версія>-x64.msi`
+
+`NitKotin.Installer\bin\x64\Release\NitKotin-uk-<версія>-x64.msi`
 
 ## Версія релізу
 
@@ -88,7 +94,7 @@ dotnet build .\NitKotin.Installer\NitKotin.Installer.wixproj -c Release
 
 `Directory.Build.props`
 
-Поточна версія в репозиторії: `1.0.7`.
+Поточна версія в репозиторії: `1.0.8`.
 
 Для публічного релізу оновлюй `Version` у цьому файлі перед збіркою MSI і використовуй такий самий номер у Git tag / GitHub Release.
 
@@ -106,6 +112,8 @@ dotnet build .\NitKotin.Installer\NitKotin.Installer.wixproj -c Release
 
 `Data\product-catalog.ua.json`
 
+`Data\product-catalog.en.json`
+
 Це не live-ціни магазину, а мотиваційні приклади в діапазоні від 100 до 20000 грн.
 
 ## Довідник мотиваційних фраз
@@ -113,6 +121,8 @@ dotnet build .\NitKotin.Installer\NitKotin.Installer.wixproj -c Release
 Локальний довідник фраз лежить у файлі:
 
 `Data\motivational-phrases.ua.json`
+
+`Data\motivational-phrases.en.json`
 
 Застосунок показує ці фрази у верхньому бігучому рядку. Щоб додати нову фразу, достатньо додати новий об'єкт у JSON у форматі:
 

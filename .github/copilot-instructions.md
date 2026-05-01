@@ -2,14 +2,14 @@
 
 ## Project Overview
 
-- This repository contains a Ukrainian-language WinForms desktop app in `NitKotin/` and a WiX v4 MSI installer in `NitKotin.Installer/`.
+- This repository contains a bilingual (English + Ukrainian) WinForms desktop app in `NitKotin/` and a WiX v4 MSI installer in `NitKotin.Installer/`.
 - The solution file is `NitKotin.slnx`.
 - The app targets `.NET 8` for Windows.
 - The installer is a per-user MSI and installs into `%LocalAppData%\NitKotin`.
 
 ## Product Conventions
 
-- Keep user-facing UI text in Ukrainian unless a change explicitly requires another language.
+- Keep user-facing UI text aligned with the selected app or installer language. English is the default app language; Ukrainian must remain fully supported.
 - Preserve the current product naming: `NitKotin`.
 - Keep the main workflow around smoke-free tracking, savings, tray icon behavior, and overlay behavior intact unless the task explicitly changes it.
 
@@ -26,7 +26,7 @@
 - Before creating a new installer release, increment the version in `Directory.Build.props`.
 - Prefer cleaning build outputs before a release build so stale files are not carried into the installer.
 - Build the app in `Release` before packaging a new MSI.
-- Build the installer in `Release` and verify the MSI appears under `NitKotin.Installer\bin\x64\Release\`.
+- Build the installer in `Release` for both `InstallerLanguage=en` and `InstallerLanguage=uk`, and verify both MSI files appear under `NitKotin.Installer\bin\x64\Release\`.
 - If documentation changes affect installation, release flow, tray, overlay, or versioning, update `README.md` in the same task.
 
 ## Standard Commands
@@ -36,14 +36,15 @@ dotnet clean .\NitKotin.slnx -c Debug
 dotnet clean .\NitKotin.slnx -c Release
 dotnet clean .\NitKotin.Installer\NitKotin.Installer.wixproj -c Release
 dotnet build .\NitKotin\NitKotin.csproj -c Release
-dotnet build .\NitKotin.Installer\NitKotin.Installer.wixproj -c Release
+dotnet build .\NitKotin.Installer\NitKotin.Installer.wixproj -c Release -p:InstallerLanguage=en
+dotnet build .\NitKotin.Installer\NitKotin.Installer.wixproj -c Release -p:InstallerLanguage=uk
 ```
 
 ## GitHub Release Expectations
 
 - Create a Git tag that matches the version from `Directory.Build.props`.
 - Create a GitHub Release with the same version number.
-- Upload the generated MSI named `NitKotin-<version>-x64.msi` as the release artifact.
+- Upload both generated MSI files named `NitKotin-en-<version>-x64.msi` and `NitKotin-uk-<version>-x64.msi` as release artifacts.
 
 ## Installer Skill
 

@@ -2,6 +2,10 @@ namespace NitKotin.Models;
 
 public sealed class SmokingConfig
 {
+    public string LanguagePreference { get; set; } = "en";
+
+    public bool HasStartedTracking { get; set; }
+
     public DateTime QuitDateTime { get; set; } = DateTime.Now;
 
     public decimal PacksPerDay { get; set; } = 2m;
