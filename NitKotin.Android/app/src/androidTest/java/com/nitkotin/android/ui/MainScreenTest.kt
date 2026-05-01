@@ -226,6 +226,8 @@ class MainScreenTest {
         }
 
         composeRule.onNodeWithText("Enable").performClick()
+        composeRule.onNodeWithTag("main_screen_list")
+            .performScrollToNode(hasText("Refresh picks"))
         composeRule.onNodeWithText("Refresh picks").performClick()
 
         assertEquals(1, permissionCount)

@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,6 +21,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -40,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.nitkotin.android.R
 import com.nitkotin.android.data.model.AppLanguage
+import com.nitkotin.android.data.model.SuggestedProduct
 import com.nitkotin.android.domain.LocalizationService
 import java.time.Instant
 import java.time.ZoneId
@@ -231,32 +235,13 @@ fun MainScreen(
                 }
             }
             item {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column {
-                        Text(LocalizationService.getString(language, "products_header"), style = MaterialTheme.typography.titleMedium)
-                        Text(state.productUpdatedAtText, style = MaterialTheme.typography.labelMedium)
-                    }
-                    Button(onClick = onRefreshProducts) {
-                        Icon(Icons.Rounded.Refresh, contentDescription = null)
-                        Text(LocalizationService.getString(language, "products_refresh"), modifier = Modifier.padding(start = 8.dp))
-                    }
-                }
-            }
-            if (state.productSuggestions.isEmpty()) {
-                item {
-                    Text(LocalizationService.getString(language, "products_empty"))
-                }
-            } else {
-                items(state.productSuggestions) { product ->
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(product.title, style = MaterialTheme.typography.titleMedium)
-                            Text("${product.priceUah.toInt()} ${LocalizationService.getString(language, "currency_major")}")
-                            Text(product.category, style = MaterialTheme.typography.labelMedium)
-                            Text(product.shortDescription, style = MaterialTheme.typography.bodyMedium)
-                        }
-                    }
-                }
+                ProductsSection(
+                    language = language,
+                    productUpdatedAtText = state.productUpdatedAtText,
+                    productSuggestions = state.productSuggestions,
+                    isTabletLike = isTabletLike,
+                    onRefreshProducts = onRefreshProducts,
+                )
             }
             item {
                 Text(LocalizationService.getString(language, "recovery_header"), style = MaterialTheme.typography.titleMedium)
@@ -279,6 +264,112 @@ fun MainScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ProductsSection(
+    language: AppLanguage,
+    productUpdatedAtText: String,
+    productSuggestions: List<SuggestedProduct>,
+    isTabletLike: Boolean,
+    onRefreshProducts: () -> Unit,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (isTabletLike) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.weight(1f)) {
+                        Text(LocalizationService.getString(language, "products_header"), style = MaterialTheme.typography.titleMedium)
+                        Text(productUpdatedAtText, style = MaterialTheme.typography.labelMedium)
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Button(onClick = onRefreshProducts) {
+                        Icon(Icons.Rounded.Refresh, contentDescription = null)
+                        Text(LocalizationService.getString(language, "products_refresh"), modifier = Modifier.padding(start = 8.dp))
+                    }
+                }
+
+                if (productSuggestions.isEmpty()) {
+                    Text(LocalizationService.getString(language, "products_empty"))
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        productSuggestions.chunked(2).forEach { rowProducts ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                rowProducts.forEach { product ->
+                                    ProductSuggestionCard(
+                                        product = product,
+                                        language = language,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                }
+                                if (rowProducts.size == 1) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                Text(LocalizationService.getString(language, "products_header"), style = MaterialTheme.typography.titleMedium)
+                Text(productUpdatedAtText, style = MaterialTheme.typography.labelMedium)
+                Button(onClick = onRefreshProducts, modifier = Modifier.align(Alignment.Start)) {
+                    Icon(Icons.Rounded.Refresh, contentDescription = null)
+                    Text(LocalizationService.getString(language, "products_refresh"), modifier = Modifier.padding(start = 8.dp))
+                }
+
+                if (productSuggestions.isEmpty()) {
+                    Text(LocalizationService.getString(language, "products_empty"))
+                } else {
+                    productSuggestions.forEachIndexed { index, product ->
+                        ProductSuggestionCard(
+                            product = product,
+                            language = language,
+                            modifier = Modifier.fillMaxWidth(),
+                            useInnerCard = false,
+                        )
+
+                        if (index < productSuggestions.lastIndex) {
+                            HorizontalDivider()
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProductSuggestionCard(
+    product: SuggestedProduct,
+    language: AppLanguage,
+    modifier: Modifier = Modifier,
+    useInnerCard: Boolean = true,
+) {
+    val content: @Composable () -> Unit = {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(product.title, style = MaterialTheme.typography.titleMedium)
+            Text("${product.priceUah.toInt()} ${LocalizationService.getString(language, "currency_major")}")
+            Text(product.category, style = MaterialTheme.typography.labelMedium)
+            Text(product.shortDescription, style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+
+    if (useInnerCard) {
+        Card(modifier = modifier) {
+            content()
+        }
+    } else {
+        Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            content()
         }
     }
 }
