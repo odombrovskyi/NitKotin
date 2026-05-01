@@ -6,3 +6,8 @@
 .vscode
 .vs
 /NitKotin/*.user
+/NitKotin.Android/.gradle
+/NitKotin.Android/app/build
+/NitKotin.Android/build
+/NitKotin.Android/local.properties
+/NitKotin.Android/.idea
