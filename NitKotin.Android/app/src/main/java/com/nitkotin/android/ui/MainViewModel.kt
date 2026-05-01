@@ -30,8 +30,8 @@ import java.time.Instant
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private companion object {
-        const val UiTickMillis = 1000L
-        const val PhraseRotationIntervalSeconds = 3
+        const val ElapsedTickMillis = 60_000L
+        const val PhraseRotationIntervalMillis = 3_000L
     }
 
     private val app = application
@@ -50,8 +50,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private var phraseIndex = 0
     private var lastProductRefresh = Instant.now()
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
-    private var elapsedSeconds = 0L
-    private var uiTickerJob: Job? = null
+    private var elapsedTickerJob: Job? = null
+    private var phraseTickerJob: Job? = null
 
     init {
         observeConfig()
@@ -59,32 +59,47 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setScreenActive(isActive: Boolean) {
         if (isActive) {
-            if (uiTickerJob?.isActive == true) {
-                return
-            }
-            uiTickerJob = viewModelScope.launch {
-                publishState(
-                    latestConfig,
-                    lastProductRefresh,
-                    rotatePhrase = false,
-                    forceSuggestionRefresh = false,
-                    updateExternalSurfaces = false,
-                )
-                while (true) {
-                    delay(UiTickMillis)
-                    elapsedSeconds += 1
+            if (elapsedTickerJob?.isActive != true) {
+                elapsedTickerJob = viewModelScope.launch {
                     publishState(
                         latestConfig,
                         lastProductRefresh,
-                        rotatePhrase = elapsedSeconds % PhraseRotationIntervalSeconds == 0L,
+                        rotatePhrase = false,
                         forceSuggestionRefresh = false,
                         updateExternalSurfaces = false,
                     )
+                    while (true) {
+                        delay(ElapsedTickMillis)
+                        publishState(
+                            latestConfig,
+                            lastProductRefresh,
+                            rotatePhrase = false,
+                            forceSuggestionRefresh = false,
+                            updateExternalSurfaces = false,
+                        )
+                    }
+                }
+            }
+
+            if (phraseTickerJob?.isActive != true) {
+                phraseTickerJob = viewModelScope.launch {
+                    while (true) {
+                        delay(PhraseRotationIntervalMillis)
+                        publishState(
+                            latestConfig,
+                            lastProductRefresh,
+                            rotatePhrase = true,
+                            forceSuggestionRefresh = false,
+                            updateExternalSurfaces = false,
+                        )
+                    }
                 }
             }
         } else {
-            uiTickerJob?.cancel()
-            uiTickerJob = null
+            elapsedTickerJob?.cancel()
+            elapsedTickerJob = null
+            phraseTickerJob?.cancel()
+            phraseTickerJob = null
         }
     }
 
@@ -156,7 +171,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (phraseIndex >= latestPhrases.size) {
                     phraseIndex = 0
                 }
-                elapsedSeconds = 0L
                 lastProductRefresh = Instant.now()
                 publishState(
                     config,

@@ -14,15 +14,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.Sell
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.HourglassTop
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Savings
+import androidx.compose.material.icons.rounded.Timelapse
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -43,10 +52,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.nitkotin.android.R
@@ -249,12 +260,18 @@ private fun OverviewPage(
                 title = LocalizationService.getString(language, "motivation_header"),
                 body = state.currentPhrase,
                 footer = LocalizationService.getString(language, "motivation_rotating"),
+                icon = Icons.Rounded.AutoAwesome,
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                bodyStyle = MaterialTheme.typography.headlineSmall,
             )
         }
         item {
             InfoCard(
                 title = LocalizationService.getString(language, "saved_caption"),
                 body = state.savedAmountText,
+                icon = Icons.Rounded.Savings,
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                bodyStyle = MaterialTheme.typography.displaySmall,
             )
         }
         item {
@@ -262,6 +279,9 @@ private fun OverviewPage(
                 title = LocalizationService.getString(language, "elapsed_caption"),
                 body = state.elapsedText,
                 footer = state.dashboardHint,
+                icon = Icons.Rounded.Timelapse,
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                bodyStyle = MaterialTheme.typography.displaySmall,
             )
         }
     }
@@ -283,10 +303,32 @@ private fun ProductsPage(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
-            Card(modifier = Modifier.fillMaxWidth()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+            ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(LocalizationService.getString(language, "products_header"), style = MaterialTheme.typography.titleMedium)
-                    Text(productUpdatedAtText, style = MaterialTheme.typography.labelMedium)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Icon(Icons.Rounded.Sell, contentDescription = null)
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(LocalizationService.getString(language, "products_header"), style = MaterialTheme.typography.titleLarge)
+                                Text(productUpdatedAtText, style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
+                        AssistChip(
+                            onClick = {},
+                            enabled = false,
+                            label = { Text(productSuggestions.size.toString()) },
+                            leadingIcon = {
+                                Icon(Icons.Rounded.AutoAwesome, contentDescription = null)
+                            },
+                        )
+                    }
                     Button(onClick = onRefreshProducts, modifier = Modifier.align(Alignment.Start)) {
                         Icon(Icons.Rounded.Refresh, contentDescription = null)
                         Text(LocalizationService.getString(language, "products_refresh"), modifier = Modifier.padding(start = 8.dp))
@@ -304,11 +346,12 @@ private fun ProductsPage(
                 }
             }
         } else {
-            items(productSuggestions) { product ->
+            itemsIndexed(productSuggestions) { index, product ->
                 ProductSuggestionCard(
                     product = product,
                     language = language,
                     modifier = Modifier.fillMaxWidth(),
+                    index = index,
                 )
             }
         }
@@ -332,20 +375,38 @@ private fun RecoveryPage(
             Text(LocalizationService.getString(language, "recovery_header"), style = MaterialTheme.typography.titleMedium)
         }
         items(recoveryMilestones) { milestone ->
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            val milestoneColors = milestoneColors(milestone.state)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = milestoneColors.containerColor),
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AssistChip(
+                        onClick = {},
+                        enabled = false,
+                        label = {
+                            Text(
+                                when (milestone.state) {
+                                    RecoveryMilestoneState.Completed -> LocalizationService.getString(language, "recovery_completed")
+                                    RecoveryMilestoneState.Current -> LocalizationService.getString(language, "recovery_current")
+                                    RecoveryMilestoneState.Upcoming -> LocalizationService.getString(language, "recovery_upcoming")
+                                }
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = when (milestone.state) {
+                                    RecoveryMilestoneState.Completed -> Icons.Rounded.CheckCircle
+                                    RecoveryMilestoneState.Current -> Icons.Rounded.Timelapse
+                                    RecoveryMilestoneState.Upcoming -> Icons.Rounded.HourglassTop
+                                },
+                                contentDescription = null,
+                            )
+                        },
+                    )
                     Text(milestone.milestone.timeframeLabel, style = MaterialTheme.typography.labelLarge)
                     Text(milestone.milestone.title, style = MaterialTheme.typography.titleMedium)
                     Text(milestone.milestone.description, style = MaterialTheme.typography.bodyMedium)
-                    Text(
-                        when (milestone.state) {
-                            RecoveryMilestoneState.Completed -> LocalizationService.getString(language, "recovery_completed")
-                            RecoveryMilestoneState.Current -> LocalizationService.getString(language, "recovery_current")
-                            RecoveryMilestoneState.Upcoming -> LocalizationService.getString(language, "recovery_upcoming")
-                        },
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
                 }
             }
         }
@@ -357,15 +418,37 @@ private fun InfoCard(
     title: String,
     body: String,
     footer: String? = null,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    containerColor: Color,
+    bodyStyle: androidx.compose.ui.text.TextStyle,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
-            Text(body, style = MaterialTheme.typography.bodyLarge)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+    ) {
+        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Icon(imageVector = icon, contentDescription = null)
+                Text(title, style = MaterialTheme.typography.titleMedium)
+            }
+            Text(body, style = bodyStyle, fontWeight = FontWeight.SemiBold)
             if (!footer.isNullOrBlank()) {
-                Text(footer, style = MaterialTheme.typography.labelMedium)
+                Text(footer, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Start)
             }
         }
+    }
+}
+
+private data class MilestoneColors(
+    val containerColor: Color,
+)
+
+@Composable
+private fun milestoneColors(state: RecoveryMilestoneState): MilestoneColors {
+    return when (state) {
+        RecoveryMilestoneState.Completed -> MilestoneColors(MaterialTheme.colorScheme.primaryContainer)
+        RecoveryMilestoneState.Current -> MilestoneColors(MaterialTheme.colorScheme.tertiaryContainer)
+        RecoveryMilestoneState.Upcoming -> MilestoneColors(MaterialTheme.colorScheme.surfaceVariant)
     }
 }
 
@@ -374,13 +457,57 @@ private fun ProductSuggestionCard(
     product: SuggestedProduct,
     language: AppLanguage,
     modifier: Modifier = Modifier,
+    index: Int = 0,
 ) {
-    Card(modifier = modifier) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(product.title, style = MaterialTheme.typography.titleMedium)
-            Text("${product.priceUah.toInt()} ${LocalizationService.getString(language, "currency_major")}")
-            Text(product.category, style = MaterialTheme.typography.labelMedium)
-            Text(product.shortDescription, style = MaterialTheme.typography.bodyMedium)
+    val containerColor = when (index % 3) {
+        0 -> MaterialTheme.colorScheme.primaryContainer
+        1 -> MaterialTheme.colorScheme.tertiaryContainer
+        else -> MaterialTheme.colorScheme.surfaceVariant
+    }
+
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top,
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(product.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text(product.shortDescription, style = MaterialTheme.typography.bodyMedium)
+                }
+                AssistChip(
+                    onClick = {},
+                    enabled = false,
+                    label = { Text("#${index + 1}") },
+                    leadingIcon = {
+                        Icon(Icons.Rounded.AutoAwesome, contentDescription = null)
+                    },
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                AssistChip(
+                    onClick = {},
+                    enabled = false,
+                    label = { Text(product.category) },
+                )
+                Text(
+                    text = "${product.priceUah.toInt()} ${LocalizationService.getString(language, "currency_major")}",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                )
+            }
         }
     }
 }

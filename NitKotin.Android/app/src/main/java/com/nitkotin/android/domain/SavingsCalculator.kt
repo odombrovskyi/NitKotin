@@ -35,6 +35,14 @@ object SavingsCalculator {
         )
     }
 
+    fun formatWholeCurrency(amount: BigDecimal, language: com.nitkotin.android.data.model.AppLanguage): String {
+        val normalized = amount.setScale(0, RoundingMode.DOWN)
+        return "%s %s".format(
+            normalized.toPlainString(),
+            LocalizationService.getString(language, "currency_major")
+        )
+    }
+
     fun formatElapsed(config: SmokingConfig, currentTime: Instant): String {
         val language = config.languagePreference
         if (!config.hasStartedTracking || !config.quitDateTime.isBefore(currentTime)) {
@@ -42,20 +50,36 @@ object SavingsCalculator {
         }
 
         val elapsed = Duration.between(config.quitDateTime, currentTime)
-        val totalSeconds = elapsed.seconds
-        val days = totalSeconds / 86400
-        val hours = (totalSeconds % 86400) / 3600
-        val minutes = (totalSeconds % 3600) / 60
-        val seconds = totalSeconds % 60
-        return "%d %s %02d %s %02d %s %02d %s".format(
+        val totalMinutes = elapsed.toMinutes()
+        val days = totalMinutes / (24 * 60)
+        val hours = (totalMinutes % (24 * 60)) / 60
+        val minutes = totalMinutes % 60
+        return "%d %s %02d %s %02d %s".format(
             days,
             LocalizationService.getString(language, "elapsed_days"),
             hours,
             LocalizationService.getString(language, "elapsed_hours"),
             minutes,
-            LocalizationService.getString(language, "elapsed_minutes"),
-            seconds,
-            LocalizationService.getString(language, "elapsed_seconds")
+            LocalizationService.getString(language, "elapsed_minutes")
+        )
+    }
+
+    fun formatElapsedDaysHours(config: SmokingConfig, currentTime: Instant): String {
+        val language = config.languagePreference
+        if (!config.hasStartedTracking || !config.quitDateTime.isBefore(currentTime)) {
+            return LocalizationService.getString(language, "elapsed_not_started")
+        }
+
+        val elapsed = Duration.between(config.quitDateTime, currentTime)
+        val totalHours = elapsed.toHours()
+        val days = totalHours / 24
+        val hours = totalHours % 24
+
+        return "%d %s %02d %s".format(
+            days,
+            LocalizationService.getString(language, "elapsed_days"),
+            hours,
+            LocalizationService.getString(language, "elapsed_hours")
         )
     }
 }

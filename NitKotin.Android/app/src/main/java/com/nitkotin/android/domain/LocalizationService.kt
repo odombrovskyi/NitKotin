@@ -7,7 +7,7 @@ import java.time.Duration
 
 object LocalizationService {
     private val englishStrings = mapOf(
-        "app_title" to "No! kitten motivator",
+        "app_title" to "No!smoking",
         "quit_now" to "I quit smoking!",
         "quit_date" to "Quit date and time",
         "change_quit_date" to "Change quit date and time",
@@ -50,7 +50,7 @@ object LocalizationService {
     )
 
     private val ukrainianStrings = mapOf(
-        "app_title" to "Ні! котину мотиватор",
+        "app_title" to "Ні!котин",
         "quit_now" to "Я кинув палити!",
         "quit_date" to "Дата й час відмови від куріння",
         "change_quit_date" to "Змінити дату й час відмови",

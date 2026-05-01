@@ -8,8 +8,10 @@ import android.content.Intent
 import android.widget.RemoteViews
 import com.nitkotin.android.MainActivity
 import com.nitkotin.android.R
-import com.nitkotin.android.domain.LocalizationService
+import com.nitkotin.android.data.model.SmokingConfig
+import com.nitkotin.android.domain.SavingsCalculator
 import com.nitkotin.android.ui.MainUiState
+import java.time.Instant
 
 object ProgressWidgetUpdater {
     fun update(context: Context, state: MainUiState) {
@@ -30,10 +32,18 @@ object ProgressWidgetUpdater {
 
         widgetIds.forEach { widgetId ->
             val views = RemoteViews(context.packageName, R.layout.progress_widget)
-            views.setTextViewText(R.id.widgetTitle, LocalizationService.getString(state.language, "widget_title"))
-            views.setTextViewText(R.id.widgetSavedAmount, state.savedAmountText)
-            views.setTextViewText(R.id.widgetElapsed, state.elapsedText)
-            views.setImageViewResource(R.id.widgetIcon, R.drawable.ic_launcher_foreground)
+            val config = SmokingConfig(
+                languagePreference = state.language,
+                hasStartedTracking = state.hasStartedTracking,
+                quitDateTime = state.quitDateTime,
+                packsPerDay = state.packsPerDay,
+                packPriceUah = state.packPriceUah,
+            )
+            val now = Instant.now()
+            val savedAmount = SavingsCalculator.calculateSavedAmount(config, now)
+
+            views.setTextViewText(R.id.widgetSavedAmount, SavingsCalculator.formatWholeCurrency(savedAmount, state.language))
+            views.setTextViewText(R.id.widgetElapsed, SavingsCalculator.formatElapsedDaysHours(config, now))
             views.setOnClickPendingIntent(R.id.widgetRoot, pendingIntent)
             appWidgetManager.updateAppWidget(widgetId, views)
         }
