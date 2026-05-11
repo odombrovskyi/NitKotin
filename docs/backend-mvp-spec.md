@@ -1,8 +1,8 @@
-# NitKotin Backend MVP Spec
+# QuitMojo Backend MVP Spec
 
 ## 1. Мета
 
-Побудувати першу серверну версію NitKotin, яка:
+Побудувати першу серверну версію QuitMojo, яка:
 
 - підтримує платні акаунти;
 - синхронізує прогрес між пристроями для premium users;

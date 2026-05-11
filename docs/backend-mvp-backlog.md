@@ -1,4 +1,4 @@
-# NitKotin Backend MVP Backlog
+# QuitMojo Backend MVP Backlog
 
 ## 1. Мета документа
 

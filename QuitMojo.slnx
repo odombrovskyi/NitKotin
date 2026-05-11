@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="QuitMojo/QuitMojo.csproj" />
+  <Project Path="QuitMojo.Installer/QuitMojo.Installer.wixproj" />
+</Solution>

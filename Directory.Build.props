@@ -1,10 +1,10 @@
 <Project>
   <PropertyGroup>
     <Version>1.0.8</Version>
-    <Product>NitKotin</Product>
-    <Company>NitKotin Contributors</Company>
+    <Product>QuitMojo</Product>
+    <Company>QuitMojo Contributors</Company>
     <Authors>Oleksii Dombrovskyi</Authors>
-    <Description>Bilingual desktop app that tracks smoke-free progress, savings, and motivation.</Description>
+    <Description>Bilingual desktop app for smoke-free tracking, savings, and day-to-day quit support.</Description>
     <AssemblyVersion>1.0.8.0</AssemblyVersion>
     <FileVersion>1.0.8.0</FileVersion>
   </PropertyGroup>

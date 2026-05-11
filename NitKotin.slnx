@@ -1,4 +1,0 @@
-<Solution>
-  <Project Path="NitKotin/NitKotin.csproj" />
-  <Project Path="NitKotin.Installer/NitKotin.Installer.wixproj" />
-</Solution>

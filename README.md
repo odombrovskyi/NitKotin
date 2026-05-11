@@ -1,6 +1,6 @@
-# Ні! котину мотиватор
+# QuitMojo
 
-Невеликий мотиваційний WinForms-застосунок на C#/.NET 8.
+Desktop-застосунок на C#/.NET 8 для відстеження прогресу без куріння, заощаджень і щоденної підтримки.
 
 Застосунок підтримує дві мови інтерфейсу: English і українську. За замовчуванням використовується English, а перемикач мови у вигляді прапорів США та України розташований праворуч у хедері. Обрана мова зберігається в конфігурацію і використовується при наступному запуску.
 
@@ -8,14 +8,14 @@
 
 Для звичайного встановлення використовуй MSI-інсталятор із GitHub Releases.
 
-- завантаж `NitKotin-en-<версія>-x64.msi` або `NitKotin-uk-<версія>-x64.msi` зі сторінки релізу;
+- завантаж `QuitMojo-en-<версія>-x64.msi` або `QuitMojo-uk-<версія>-x64.msi` зі сторінки релізу;
 - переконайся, що на Windows встановлено `.NET 8 Desktop Runtime`, бо інсталятор збирається як framework-dependent;
 - запусти MSI без прав адміністратора і встанови застосунок у профіль поточного користувача;
 - після інсталяції застосунок буде доступний через меню Start і через ярлик на робочому столі.
 
 За замовчуванням per-user інсталятор кладе файли застосунку в:
 
-`%LocalAppData%\NitKotin`
+`%LocalAppData%\QuitMojo`
 
 ## Системні вимоги
 
@@ -52,8 +52,8 @@
 ## Розробка і локальний запуск
 
 ```powershell
-dotnet build .\NitKotin\NitKotin.csproj
-dotnet run --project .\NitKotin\NitKotin.csproj
+dotnet build .\QuitMojo\QuitMojo.csproj
+dotnet run --project .\QuitMojo\QuitMojo.csproj
 ```
 
 ## GitHub і релізи
@@ -68,25 +68,25 @@ dotnet run --project .\NitKotin\NitKotin.csproj
 1. інкрементувати `Version` у `Directory.Build.props`;
 2. оновити `README.md`, якщо змінилась версія або release notes-інформація для користувача;
 3. виконати `clean` для solution і installer-проєкту, щоб не лишилось старих артефактів;
-4. зібрати `NitKotin` у `Release`;
-5. зібрати `NitKotin.Installer` у `Release`;
+4. зібрати `QuitMojo` у `Release`;
+5. зібрати `QuitMojo.Installer` у `Release`;
 6. створити Git tag і GitHub Release з таким самим номером версії;
-7. прикріпити MSI `NitKotin-en-<версія>-x64.msi` і `NitKotin-uk-<версія>-x64.msi` до релізу.
+7. прикріпити MSI `QuitMojo-en-<версія>-x64.msi` і `QuitMojo-uk-<версія>-x64.msi` до релізу.
 
 ## Збірка MSI
 
 ```powershell
-dotnet build .\NitKotin.Installer\NitKotin.Installer.wixproj -c Release -p:InstallerLanguage=en
-dotnet build .\NitKotin.Installer\NitKotin.Installer.wixproj -c Release -p:InstallerLanguage=uk
+dotnet build .\QuitMojo.Installer\QuitMojo.Installer.wixproj -c Release -p:InstallerLanguage=en
+dotnet build .\QuitMojo.Installer\QuitMojo.Installer.wixproj -c Release -p:InstallerLanguage=uk
 ```
 
 Під час збірки installer-проєкт сам виконує `dotnet publish` для WinForms-застосунку в framework-dependent режимі, а потім пакує опубліковані файли в MSI.
 
 Готові інсталятори з'являються в:
 
-`NitKotin.Installer\bin\x64\Release\NitKotin-en-<версія>-x64.msi`
+`QuitMojo.Installer\bin\x64\Release\QuitMojo-en-<версія>-x64.msi`
 
-`NitKotin.Installer\bin\x64\Release\NitKotin-uk-<версія>-x64.msi`
+`QuitMojo.Installer\bin\x64\Release\QuitMojo-uk-<версія>-x64.msi`
 
 ## Версія релізу
 
@@ -102,7 +102,7 @@ dotnet build .\NitKotin.Installer\NitKotin.Installer.wixproj -c Release -p:Insta
 
 Файл конфігурації створюється в профілі поточного користувача:
 
-`%LocalAppData%\NitKotin\nitkotin.config.json`
+`%LocalAppData%\QuitMojo\quitmojo.config.json`
 
 Якщо файлу немає або він пошкоджений, застосунок запускається зі значеннями за замовчуванням.
 
